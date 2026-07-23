@@ -10,6 +10,7 @@
 }
 .home-page .wrap { max-width: 1200px; margin: 0 auto; padding: 0 var(--edge); }
 .home-page .nav {
+  position: relative;
   padding-inline: max(var(--edge), calc((100% - 1200px) / 2 + var(--edge)));
   display: flex;
   align-items: center;
@@ -21,6 +22,31 @@
 .home-page .nav a { white-space: nowrap; color: #9099a3; text-decoration: none; font-size: 14px; margin-right: 24px; }
 .home-page .nav a[aria-current='location'] { color: #4ade80; }
 .home-page .nav-links { display: flex; align-items: center; }
+.home-page .nav-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #2a2f37;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+.home-page .nav-toggle span {
+  display: block;
+  width: 16px;
+  height: 2px;
+  background: #f1f3f4;
+  border-radius: 2px;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+.home-page .nav-toggle-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.home-page .nav-toggle-open span:nth-child(2) { opacity: 0; }
+.home-page .nav-toggle-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 .home-page .btn { border: none; cursor: pointer; font-size: 14px; font-weight: 700; border-radius: 10px; padding: 10px 20px; }
 .home-page .btn-primary { background: #22c55e; color: #08150d; }
 .home-page .btn-ghost { background: transparent; color: #f1f3f4; border: 1px solid #2a2f37; }
@@ -70,4 +96,23 @@
   .home-page .split { grid-template-columns: 1fr; }
   .home-page .split-figure { order: -1; }
 }
-@media (max-width: 480px) { .home-page .nav a { display: none; } }
+@media (max-width: 640px) {
+  .home-page .nav-toggle { display: flex; }
+  .home-page .nav-links {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    background: #14171b;
+    border-bottom: 1px solid #23272e;
+    padding: 8px var(--edge) 20px;
+    z-index: 20;
+  }
+  .home-page .nav-links.nav-links-open { display: flex; }
+  .home-page .nav-links a { margin-right: 0; padding: 10px 0; }
+  .home-page .nav-links .btn { width: 100%; margin-top: 8px; }
+}

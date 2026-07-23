@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import HomeNav from "./HomeNav";
 import "./home.css";
 
 export const metadata: Metadata = {
@@ -11,18 +12,7 @@ export const metadata: Metadata = {
 export default function Home() {
   return (
     <div className="home-page">
-      <nav className="nav">
-        <span className="nav-brand">Sakatl</span>
-        <div className="nav-links">
-          <a href="#rutinas" aria-current="location">Rutinas</a>
-          <a href="#comunidad">Comunidad</a>
-          <a href="#registro">Registro</a>
-          <Link href="/ejercicios">Ejercicios</Link>
-          <Link href="/app?view=desktop">
-            <button type="button" className="btn btn-ghost">Entrar</button>
-          </Link>
-        </div>
-      </nav>
+      <HomeNav />
 
       <div className="wrap">
         <section className="hero">
