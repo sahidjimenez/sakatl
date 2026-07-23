@@ -155,7 +155,7 @@ export default function ExerciseLibrary({
       </div>
 
       {selectedId && (
-        <ExerciseDetailModal id={selectedId} onClose={() => setSelectedId(null)} />
+        <ExerciseDetailModal key={selectedId} id={selectedId} onClose={() => setSelectedId(null)} />
       )}
     </div>
   );
@@ -166,7 +166,6 @@ function ExerciseDetailModal({ id, onClose }: { id: string; onClose: () => void 
 
   useEffect(() => {
     let cancelled = false;
-    setDetail(null);
     fetch(`/api/exercises/${id}`)
       .then((res) => res.json())
       .then((data) => {

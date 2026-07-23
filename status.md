@@ -26,6 +26,7 @@
 - [ ] Schema DB creado (Backend)
 - [x] Home implementado (Frontend) — `app/page.tsx`, `app/home.css`
 - [x] Biblioteca de ejercicios implementada (Frontend) — `/ejercicios`
+- [x] Social share (OG image) + PWA (manifest, iconos, service worker)
 - [ ] Pantalla de rutinas implementada (Frontend)
 - [ ] API implementada (Backend) — para rutinas/usuarios
 - [ ] Integración completa (Fullstack)
@@ -43,4 +44,13 @@
 - Nombre/categoría/equipo/objetivo del dataset están solo en inglés; la
   búsqueda también revisa `instructions.es` como respaldo para que términos
   en español (ej. "pecho", "glúteos") encuentren resultados.
-- `npm run build` verificado sin errores.
+- **Social share + PWA**: `app/opengraph-image.tsx` genera la tarjeta que se
+  ve al compartir el link (1200×630, logo + "Tu rutina. Su ritmo."). Favicon
+  (`app/icon.tsx`) y apple-touch-icon (`app/apple-icon.tsx`) usan el mismo
+  glifo de mancuerna en verde sobre fondo oscuro. `app/manifest.ts` define el
+  manifest PWA (instalable, `display: standalone`); sus iconos 192/512
+  (`public/icons/`) están pre-generados con `scripts/generate-icons.mjs`
+  (correr de nuevo si cambia el diseño del icono). Service worker mínimo en
+  `public/sw.js` (cache-first para assets estáticos, network-first con
+  fallback a cache para el resto) registrado desde `app/register-sw.tsx`.
+- `npm run build` y `npm run lint` verificados sin errores.
