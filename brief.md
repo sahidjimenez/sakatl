@@ -27,8 +27,8 @@ repeticiones sin depender de hojas sueltas o notas del celular.
 
 ## Stack acordado
 Next.js 16 (App Router) + TypeScript + Tailwind CSS v4.
-Base de datos/backend: por definir (candidato: Supabase, como en el resto de
-proyectos — ver `../../shared/stack.md`).
+Base de datos: Neon Postgres (Drizzle ORM). Auth: Clerk. Ambos provisionados
+vía Vercel Marketplace y conectados al proyecto (ver `status.md`).
 
 ## Fuente de datos de ejercicios
 `public/exercises/` contiene una copia completa del repo

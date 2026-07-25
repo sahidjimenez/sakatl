@@ -37,7 +37,7 @@ export default function HomeNav() {
         <Link href="/ejercicios" onClick={close}>
           Ejercicios
         </Link>
-        <Link href="/app?view=desktop" onClick={close}>
+        <Link href="/sign-in" onClick={close}>
           <button type="button" className="btn btn-ghost">
             Entrar
           </button>
