@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, inArray, isNotNull, lt, ne, sql } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, inArray, isNotNull, lt, ne, or, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { getDb } from "./db";
 import {
@@ -433,8 +433,21 @@ export async function listMyRoutines(ownerId: string): Promise<RoutineCard[]> {
   });
 }
 
-export async function listCommunityRoutines(excludeOwnerId: string, offset: number, limit: number) {
+export async function listCommunityRoutines(
+  excludeOwnerId: string,
+  offset: number,
+  limit: number,
+  q?: string,
+) {
   const db = getDb();
+  const needle = q?.trim();
+  const conditions = [ne(routines.ownerId, excludeOwnerId)];
+  if (needle) {
+    conditions.push(
+      or(ilike(users.displayName, `%${needle}%`), ilike(routines.name, `%${needle}%`))!,
+    );
+  }
+
   return db
     .select({
       id: routines.id,
@@ -447,7 +460,7 @@ export async function listCommunityRoutines(excludeOwnerId: string, offset: numb
     })
     .from(routines)
     .innerJoin(users, eq(users.id, routines.ownerId))
-    .where(ne(routines.ownerId, excludeOwnerId))
+    .where(and(...conditions))
     .orderBy(desc(routines.createdAt))
     .offset(offset)
     .limit(limit);
