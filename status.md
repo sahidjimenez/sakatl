@@ -1,26 +1,28 @@
 # Estado del Proyecto — Sakatl (App de ejercicio colaborativa)
 
-Última actualización: 2026-07-24
+Última actualización: 2026-07-27
 
 ## Estado general
-🟡 En progreso
+🟢 Núcleo + asistente IA completos y en producción. Pendiente: Clerk en modo
+producción real y sacar el proyecto del muro de SSO de Vercel (decisiones del
+usuario, ver Notas).
 
 ## Por agente
 
 | Agente | Estado | Tarea actual | Bloqueadores |
 |--------|--------|--------------|--------------|
-| UX/UI | 🟡 | Home diseñado en Claude Design; falta diseñar "Fitness App" (rutinas) | — |
-| Backend | 🟡 | API de ejercicios lista (`/api/exercises`); DB/auth provisionados (Neon + Clerk), falta el schema de rutinas/usuarios | — |
-| Frontend | 🟡 | Home + biblioteca de ejercicios implementados; falta la pantalla de rutinas | — |
-| Fullstack | 🔴 | — | — |
-| Tester | 🔴 | — | — |
-| Deploy | 🔴 | — | — |
+| UX/UI | 🟢 | Home diseñado en Claude Design; "Fitness App" (rutinas) se dio por superada — se implementó directo sobre el mockup real del usuario | — |
+| Backend | 🟢 | API de ejercicios y de rutinas/sesiones completas; schema DB completo; asistente IA con tools propias | — |
+| Frontend | 🟢 | Home, biblioteca de ejercicios, app de rutinas y asistente IA implementados | — |
+| Fullstack | 🟢 | Flujo completo probado a nivel lógica/DB (crear rutina, sesión, sets, comunidad, asistente) | — |
+| Tester | 🟢 | QA manual por decisión del usuario (sin framework de tests automatizado) — ver Notas | — |
+| Deploy | 🟢 | Deploy a producción vía CI/CD (push a main) | Deployment Protection de Vercel activa — el usuario la revisa |
 
 ## Hitos
 
 - [x] Brief aprobado
 - [x] Diseño de Home completado (Claude Design)
-- [ ] Diseño de "Fitness App" (rutinas) completado
+- [x] Diseño de "Fitness App" (rutinas) — superado: implementado directo sobre mockup del usuario, no se usó Claude Design
 - [x] Design tokens documentados (`figma.md`)
 - [x] API contract definido (Backend) — ejercicios + rutinas
 - [x] DB/auth decididos y provisionados (Neon Postgres + Clerk, vía Vercel Marketplace)
@@ -30,10 +32,10 @@
 - [x] Social share (OG image) + PWA (manifest, iconos, service worker)
 - [x] Pantalla de rutinas implementada (Frontend) — rediseñada según mockup de referencia del usuario (sidebar/bottom-tabs, dashboard "Inicio")
 - [x] API implementada (Backend) — para rutinas/usuarios
-- [ ] Integración completa (Fullstack)
-- [ ] Tests aprobados (Tester)
-- [ ] Deploy a staging (Deploy)
-- [ ] Deploy a producción (Deploy)
+- [x] Asistente de chat con IA implementado (recomienda ejercicios y rutinas completas)
+- [x] Integración completa (Fullstack) — probada a nivel lógica/DB (ver Notas)
+- [x] QA manual (Tester) — decisión del usuario, sin suite automatizada
+- [x] Deploy a producción (Deploy) — vía CI/CD existente (push a main)
 
 ## Notas
 - Dataset completo de ejercicios (`hasaneyldrm/exercises-dataset`) copiado a
@@ -175,3 +177,57 @@
     `/api/routines` (GET y POST) devuelve 307 (redirect a sign-in) sin
     sesión.
   - UI de rutinas (Frontend) implementada, consumiendo esta API/lógica.
+
+- **Asistente de chat con IA** (2026-07-27) — `brief.md` punto 4, hasta
+  ahora solo un badge "IA" sin implementar:
+  - Vive en `/app/comunidad`, con un toggle "Descubrir" (grid existente) /
+    "Asistente IA" (`ComunidadTabs.tsx` + `AsistenteChat.tsx`).
+  - AI SDK v6 (`ToolLoopAgent`) en `lib/agents/assistant-agent.ts`, con dos
+    tools: `searchExercises` (envuelve `lib/exercises.ts`, evita que el
+    modelo invente ejercicios) y `proposeRoutine` (arma una rutina completa
+    single/bi/tri-serie con `exerciseId` reales, validados contra el
+    catálogo).
+  - Modelo: **Anthropic directo** (`@ai-sdk/anthropic`, `claude-sonnet-5`),
+    no Vercel AI Gateway — decisión explícita del usuario, que provista su
+    propia `ANTHROPIC_API_KEY` (en `.env.local`, gitignorado, y agregada
+    como env var de Vercel en Production/Preview/Development).
+  - `app/api/assistant/route.ts` — streaming vía
+    `createAgentUIStreamResponse`, protegido por `requireUser()`.
+  - Cuando el asistente propone una rutina, se renderiza como tarjeta con
+    botón "Crear esta rutina" que llama directo a `createRoutineAction`
+    (la misma server action que usa `RoutineForm.tsx` — no se duplicó
+    lógica).
+  - Probado con un smoke test standalone (`ToolLoopAgent.generate()` fuera
+    de Next.js): busca ejercicios reales y devuelve una propuesta válida.
+  - El usuario probó el flujo completo en el navegador y confirmó que la
+    creación de rutina desde el asistente funciona bien.
+
+- **Idioma** (2026-07-27): a pedido del usuario, toda la app pasó de "vos"
+  (rioplatense) a "tú" (español mexicano) — textos de UI en
+  Inicio/Perfil/Rutinas/RoutineForm/Comunidad, mensajes de error del
+  backend (`lib/routines.ts`) y las instrucciones del asistente de IA.
+
+- **QA de esta ronda** (2026-07-27): no pude loguearme con una cuenta real
+  (crear cuentas/ingresar contraseñas no son acciones que yo pueda hacer
+  por el usuario). En su lugar, probé toda la lógica de negocio con un
+  script standalone contra la base de Neon real (usuarios sintéticos,
+  borrados al final): crear rutina (single/bi/tri-serie), editar,
+  ownership checks, comunidad + seguir rutina, sesión + set logs (incl.
+  upsert sin duplicar), completar sesión, progreso semanal, racha,
+  historial — todo OK. El usuario después confirmó el flujo visual en el
+  navegador (crear rutina desde el asistente) y le pareció bien.
+
+- **Deploy a producción** (2026-07-27): el repo ya tenía CI/CD de Vercel
+  conectado a GitHub (push a `main` dispara deploy a producción
+  automáticamente). Se hizo commit + push de esta ronda de cambios; el
+  deploy quedó `Ready` en
+  `https://sakatl-sahidjimenezs-projects.vercel.app`.
+  - **Pendiente a cargo del usuario**: la URL de producción está detrás
+    del SSO/Deployment Protection de Vercel (config previa del proyecto,
+    no introducida en esta ronda) — por ahora solo el team de Vercel puede
+    verla. El usuario la va a revisar en Project Settings → Deployment
+    Protection.
+  - **Pendiente a cargo del usuario**: Clerk sigue en modo test
+    (`pk_test_...`). Se deployó así a propósito (decisión del usuario);
+    pasar a instancia de producción con dominio propio queda para cuando
+    haya usuarios reales.
