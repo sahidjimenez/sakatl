@@ -167,12 +167,11 @@
     `proxy.ts`, siguiendo la recomendación de Clerk sobre checks por
     recurso). `ensureUser()` sincroniza lazy la fila en `users` desde Clerk
     en cada request autenticado.
-  - Decisión de producto tomada por mí, a revisar: por ahora **no hay
-    privacidad** — cualquier usuario logueado puede ver el detalle de
-    cualquier rutina de otro (necesario para "ver rutinas de la comunidad" /
-    seguir). Si en algún momento se quiere que las rutinas sean privadas por
-    default, hay que agregar un flag de visibilidad.
+  - **Decisión de privacidad confirmada con el usuario (2026-07-27)**: las
+    rutinas quedan públicas para cualquier usuario logueado (no hay flag de
+    visibilidad). Es intencional — simplifica "descubrir"/seguir rutinas de
+    la comunidad, que es el flujo core del producto.
   - `npm run build` y `npm run lint` verificados; probé en dev que
     `/api/routines` (GET y POST) devuelve 307 (redirect a sign-in) sin
-    sesión — falta probar el flujo completo con una cuenta real logueada.
-  - Falta: UI de rutinas (Frontend) que consuma esta API.
+    sesión.
+  - UI de rutinas (Frontend) implementada, consumiendo esta API/lógica.

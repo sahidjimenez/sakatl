@@ -230,7 +230,7 @@ export async function createRoutine(ownerId: string, rawInput: unknown) {
 export async function updateRoutine(routineId: string, ownerId: string, rawInput: unknown) {
   const routine = await getRoutineRow(routineId);
   if (!routine) throw new ApiError(404, "Rutina no encontrada.");
-  if (routine.ownerId !== ownerId) throw new ApiError(403, "No sos dueño de esta rutina.");
+  if (routine.ownerId !== ownerId) throw new ApiError(403, "No eres dueño de esta rutina.");
 
   const input = validateRoutineInput(rawInput);
   const db = getDb();
@@ -254,7 +254,7 @@ export async function updateRoutine(routineId: string, ownerId: string, rawInput
 export async function deleteRoutine(routineId: string, ownerId: string) {
   const routine = await getRoutineRow(routineId);
   if (!routine) throw new ApiError(404, "Rutina no encontrada.");
-  if (routine.ownerId !== ownerId) throw new ApiError(403, "No sos dueño de esta rutina.");
+  if (routine.ownerId !== ownerId) throw new ApiError(403, "No eres dueño de esta rutina.");
   const db = getDb();
   await db.delete(routines).where(eq(routines.id, routineId));
 }
@@ -457,7 +457,7 @@ export async function followRoutine(originalRoutineId: string, followerId: strin
   const original = await getRoutineDetail(originalRoutineId);
   if (!original) throw new ApiError(404, "Rutina no encontrada.");
   if (original.ownerId === followerId) {
-    throw new ApiError(400, "No podés seguir tu propia rutina.");
+    throw new ApiError(400, "No puedes seguir tu propia rutina.");
   }
 
   const db = getDb();
@@ -495,7 +495,7 @@ export async function followRoutine(originalRoutineId: string, followerId: strin
 export async function startSession(routineId: string, userId: string) {
   const routine = await getRoutineRow(routineId);
   if (!routine) throw new ApiError(404, "Rutina no encontrada.");
-  if (routine.ownerId !== userId) throw new ApiError(403, "No sos dueño de esta rutina.");
+  if (routine.ownerId !== userId) throw new ApiError(403, "No eres dueño de esta rutina.");
 
   const db = getDb();
   const [session] = await db
@@ -508,7 +508,7 @@ export async function startSession(routineId: string, userId: string) {
 export async function listRoutineSessions(routineId: string, userId: string) {
   const routine = await getRoutineRow(routineId);
   if (!routine) throw new ApiError(404, "Rutina no encontrada.");
-  if (routine.ownerId !== userId) throw new ApiError(403, "No sos dueño de esta rutina.");
+  if (routine.ownerId !== userId) throw new ApiError(403, "No eres dueño de esta rutina.");
 
   const db = getDb();
   return db

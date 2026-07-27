@@ -12,7 +12,7 @@ export default function NuevaRutinaPage() {
         <p className="mb-2 text-xs font-semibold tracking-wide text-[#9099a3] uppercase">
           Nueva rutina
         </p>
-        <h1 className="mb-8 text-3xl font-extrabold">Armá tu rutina</h1>
+        <h1 className="mb-8 text-3xl font-extrabold">Arma tu rutina</h1>
         <RoutineForm mode="create" />
       </div>
     </div>

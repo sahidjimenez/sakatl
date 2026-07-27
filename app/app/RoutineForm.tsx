@@ -139,11 +139,11 @@ export default function RoutineForm({
     setError(null);
 
     if (!name.trim()) {
-      setError("Ponele un nombre a la rutina.");
+      setError("Ponle un nombre a la rutina.");
       return;
     }
     if (blocks.length === 0) {
-      setError("Agregá al menos un bloque.");
+      setError("Agrega al menos un bloque.");
       return;
     }
     for (const block of blocks) {
@@ -209,7 +209,7 @@ export default function RoutineForm({
         </div>
         <div>
           <label className="mb-1.5 block text-sm font-semibold text-[#9099a3]">
-            ¿Qué días la entrenás? (opcional)
+            ¿Qué días la entrenas? (opcional)
           </label>
           <div className="flex flex-wrap gap-2">
             {WEEKDAYS.map((day) => (

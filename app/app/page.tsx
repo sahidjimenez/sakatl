@@ -142,9 +142,9 @@ export default async function AppDashboard() {
               </>
             ) : (
               <>
-                <p className="text-sm text-[#9099a3]">Hoy no tenés rutina agendada</p>
+                <p className="text-sm text-[#9099a3]">Hoy no tienes rutina agendada</p>
                 <p className="mt-2 text-sm text-[#6b7280]">
-                  Agendá días para tus rutinas y acá te va a aparecer la de hoy.
+                  Agenda días para tus rutinas y aquí te va a aparecer la de hoy.
                 </p>
                 <Link
                   href="/app/rutinas"
@@ -166,7 +166,7 @@ export default async function AppDashboard() {
           </div>
           {schedule.upcoming.length === 0 ? (
             <p className="rounded-2xl border border-[#2a2f37] bg-[#1c2026] px-6 py-8 text-center text-sm text-[#9099a3]">
-              No tenés más entrenamientos agendados esta semana.
+              No tienes más entrenamientos agendados esta semana.
             </p>
           ) : (
             <div className="flex flex-col gap-2">

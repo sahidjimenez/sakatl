@@ -33,7 +33,7 @@ export default async function PerfilPage() {
         <div className="rounded-2xl border border-[#2a2f37] bg-[#1c2026] p-5">
           <p className="mb-1 text-base font-bold text-[#f1f3f4]">Meta semanal</p>
           <p className="mb-4 text-sm text-[#9099a3]">
-            Cuántos entrenamientos por semana querés completar. Se usa en &quot;Tu progreso&quot; del Inicio.
+            Cuántos entrenamientos por semana quieres completar. Se usa en &quot;Tu progreso&quot; del Inicio.
           </p>
           <form action={updateWeeklyGoalAction} className="flex items-center gap-3">
             <input

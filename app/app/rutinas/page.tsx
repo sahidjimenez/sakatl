@@ -29,7 +29,7 @@ export default async function RutinasPage() {
           <p className="rounded-2xl border border-[#2a2f37] bg-[#1c2026] px-6 py-12 text-center text-[#9099a3]">
             Todavía no armaste ninguna rutina.{" "}
             <Link href="/app/nueva" className="text-[#4ade80]">
-              Creá la primera
+              Crea la primera
             </Link>
             .
           </p>
