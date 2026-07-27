@@ -12,6 +12,23 @@ type CommunityRoutine = {
   ownerDisplayName: string | null;
 };
 
+function PersonIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <circle cx="12" cy="8" r="3.5" />
+      <path d="M5 20c0-3.6 3-6.5 7-6.5s7 2.9 7 6.5" />
+    </svg>
+  );
+}
+
 export function ComunidadDiscover() {
   const [q, setQ] = useState("");
   const [items, setItems] = useState<CommunityRoutine[]>([]);
@@ -66,9 +83,13 @@ export function ComunidadDiscover() {
                 >
                   {routine.name}
                 </Link>
-                <p className="mt-1 text-xs text-[#9099a3]">
-                  de {routine.ownerDisplayName ?? "otro usuario"}
-                </p>
+                <Link
+                  href={`/app/comunidad/${routine.ownerId}`}
+                  className="mt-1 inline-flex items-center gap-1 text-xs text-[#9099a3] hover:text-[#4ade80]"
+                >
+                  <PersonIcon className="h-3.5 w-3.5" />
+                  {routine.ownerDisplayName ?? "otro usuario"}
+                </Link>
               </div>
               {routine.description && (
                 <p className="line-clamp-2 text-sm text-[#9099a3]">{routine.description}</p>
