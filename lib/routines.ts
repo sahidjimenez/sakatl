@@ -466,6 +466,22 @@ export async function listCommunityRoutines(
     .limit(limit);
 }
 
+export async function searchCommunityUsers(excludeUserId: string, q: string, limit = 6) {
+  const needle = q.trim();
+  if (!needle) return [];
+  const db = getDb();
+  return db
+    .select({
+      id: users.id,
+      displayName: users.displayName,
+      avatarUrl: users.avatarUrl,
+    })
+    .from(users)
+    .where(and(ne(users.id, excludeUserId), ilike(users.displayName, `%${needle}%`)))
+    .orderBy(users.displayName)
+    .limit(limit);
+}
+
 export async function followRoutine(originalRoutineId: string, followerId: string) {
   const original = await getRoutineDetail(originalRoutineId);
   if (!original) throw new ApiError(404, "Rutina no encontrada.");

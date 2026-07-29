@@ -5,6 +5,7 @@ import {
   handleApiError,
   listCommunityRoutines,
   listMyRoutines,
+  searchCommunityUsers,
 } from "@/lib/routines";
 
 export async function GET(request: NextRequest) {
@@ -17,8 +18,11 @@ export async function GET(request: NextRequest) {
       const offset = Number(params.get("offset") ?? 0) || 0;
       const limit = Math.min(Number(params.get("limit") ?? 24) || 24, 60);
       const q = params.get("q") ?? undefined;
-      const items = await listCommunityRoutines(userId, offset, limit, q);
-      return NextResponse.json({ items });
+      const [items, people] = await Promise.all([
+        listCommunityRoutines(userId, offset, limit, q),
+        q ? searchCommunityUsers(userId, q) : Promise.resolve([]),
+      ]);
+      return NextResponse.json({ items, people });
     }
 
     const items = await listMyRoutines(userId);

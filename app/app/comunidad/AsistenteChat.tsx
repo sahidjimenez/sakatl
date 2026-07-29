@@ -6,6 +6,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import type { AssistantUIMessage } from "@/lib/agents/assistant-agent";
 import { createRoutineAction, type FormActionResult } from "@/lib/actions/routines";
+import { ExerciseThumb } from "@/app/components/ExerciseThumb";
 
 type ProposeRoutinePart = Extract<AssistantUIMessage["parts"][number], { type: "tool-proposeRoutine" }>;
 type ProposeRoutineOutputPart = Extract<ProposeRoutinePart, { state: "output-available" }>;
@@ -54,12 +55,20 @@ function RoutineProposalCard({ part }: { part: ProposeRoutineOutputPart }) {
               {block.type === "single" ? "Ejercicio suelto" : block.type === "bi_series" ? "Bi-serie" : "Tri-serie"}
             </p>
             {block.exercises.map((ex, j) => (
-              <p key={j} className="text-[#f1f3f4]">
-                {ex.exerciseName} — {ex.plannedSets}x
-                {ex.targetRepsMin && ex.targetRepsMax
-                  ? `${ex.targetRepsMin}-${ex.targetRepsMax}`
-                  : ex.targetRepsMin ?? "?"}
-              </p>
+              <div key={j} className="flex items-center gap-2.5">
+                <ExerciseThumb
+                  exerciseId={ex.exerciseId}
+                  image={ex.exerciseImage}
+                  name={ex.exerciseName}
+                  imgClassName="h-9 w-9 rounded-lg object-cover"
+                />
+                <p className="text-[#f1f3f4]">
+                  {ex.exerciseName} — {ex.plannedSets}x
+                  {ex.targetRepsMin && ex.targetRepsMax
+                    ? `${ex.targetRepsMin}-${ex.targetRepsMax}`
+                    : ex.targetRepsMin ?? "?"}
+                </p>
+              </div>
             ))}
           </div>
         ))}

@@ -2,13 +2,30 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { requireUser } from "@/lib/auth";
-import { getUserProfile, listMyRoutines } from "@/lib/routines";
+import { getStreak, getUserProfile, getWeeklyProgress, listMyRoutines } from "@/lib/routines";
 import { followRoutineAction } from "@/lib/actions/routines";
-import { formatRelativeDate } from "@/lib/format";
+import { formatDuration, formatRelativeDate } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Perfil de usuario — Sakatl",
 };
+
+function ArrowLeftIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M19 12H5" />
+      <path d="M11 18l-6-6 6-6" />
+    </svg>
+  );
+}
 
 export default async function PerfilUsuarioPage({
   params,
@@ -21,16 +38,21 @@ export default async function PerfilUsuarioPage({
   if (!profile) notFound();
 
   const isSelf = userId === currentUserId;
-  const routines = await listMyRoutines(userId);
+  const [routines, progress, streak] = await Promise.all([
+    listMyRoutines(userId),
+    getWeeklyProgress(userId),
+    getStreak(userId),
+  ]);
 
   return (
     <div className="flex-1 px-[clamp(20px,5vw,56px)] py-10">
       <div className="mx-auto flex max-w-[1100px] flex-col gap-6">
         <Link
           href="/app/comunidad"
-          className="text-sm font-semibold text-[#9099a3] hover:text-[#f1f3f4]"
+          className="inline-flex w-fit items-center gap-1.5 text-sm font-semibold text-[#9099a3] transition-colors hover:text-[#4ade80]"
         >
-          ← Comunidad
+          <ArrowLeftIcon className="h-4 w-4" />
+          Comunidad
         </Link>
 
         <div className="flex items-center gap-4 rounded-2xl border border-[#2a2f37] bg-[#1c2026] p-5">
@@ -52,6 +74,45 @@ export default async function PerfilUsuarioPage({
               {isSelf && <span className="ml-2 text-sm font-normal text-[#9099a3]">(tú)</span>}
             </p>
             <p className="text-sm text-[#9099a3]">Meta semanal: {profile.weeklyGoal} entrenamientos</p>
+          </div>
+          {streak > 0 && (
+            <span className="ml-auto flex items-center gap-1.5 rounded-full border border-[#2a2f37] bg-[#0d0f12] px-3 py-1.5 text-sm font-bold text-[#f97316]">
+              🔥 {streak}
+            </span>
+          )}
+        </div>
+
+        <div className="rounded-2xl border border-[#2a2f37] bg-[#1c2026] p-6">
+          <p className="mb-4 text-base font-bold text-[#f1f3f4]">
+            {isSelf ? "Tu progreso" : "Su progreso"} <span className="font-normal text-[#9099a3]">Esta semana</span>
+          </p>
+          <div className="mb-5 grid grid-cols-3 gap-4">
+            <div>
+              <p className="text-xs text-[#9099a3]">Entrenamientos</p>
+              <p className="mt-1 text-2xl font-extrabold text-[#f1f3f4]">{progress.sessionsCount}</p>
+            </div>
+            <div>
+              <p className="text-xs text-[#9099a3]">Volumen</p>
+              <p className="mt-1 text-2xl font-extrabold text-[#f1f3f4]">
+                {Math.round(progress.volumeKg).toLocaleString("es")} kg
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-[#9099a3]">Tiempo</p>
+              <p className="mt-1 text-2xl font-extrabold text-[#f1f3f4]">{formatDuration(progress.totalMs)}</p>
+            </div>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-[#9099a3]">Meta semanal</span>
+            <span className="text-[#9099a3]">
+              {progress.sessionsCount}/{progress.weeklyGoal}
+            </span>
+          </div>
+          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[#2a2f37]">
+            <div
+              className="h-full rounded-full bg-[#22c55e]"
+              style={{ width: `${Math.min(100, Math.round((progress.sessionsCount / progress.weeklyGoal) * 100))}%` }}
+            />
           </div>
         </div>
 

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { getSessionDetail } from "@/lib/routines";
 import { completeSessionAction, logSetFormAction } from "@/lib/actions/routines";
+import { ExerciseThumb } from "@/app/components/ExerciseThumb";
 
 const BLOCK_LABELS: Record<string, string> = {
   single: "Ejercicio suelto",
@@ -61,11 +62,11 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
                   <div key={ex.id}>
                     <div className="mb-2 flex items-center gap-3">
                       {ex.exercise?.image && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={`/exercises/${ex.exercise.image}`}
-                          alt={ex.exercise.name}
-                          className="h-10 w-10 rounded-lg object-cover"
+                        <ExerciseThumb
+                          exerciseId={ex.exerciseId}
+                          image={ex.exercise.image}
+                          name={ex.exercise.name}
+                          imgClassName="h-10 w-10 rounded-lg object-cover"
                         />
                       )}
                       <p className="text-sm font-semibold text-[#f1f3f4]">

@@ -12,6 +12,12 @@ type CommunityRoutine = {
   ownerDisplayName: string | null;
 };
 
+type CommunityPerson = {
+  id: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+};
+
 function PersonIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -32,6 +38,7 @@ function PersonIcon({ className }: { className?: string }) {
 export function ComunidadDiscover() {
   const [q, setQ] = useState("");
   const [items, setItems] = useState<CommunityRoutine[]>([]);
+  const [people, setPeople] = useState<CommunityPerson[]>([]);
   const [loading, setLoading] = useState(true);
   const requestId = useRef(0);
 
@@ -44,6 +51,7 @@ export function ComunidadDiscover() {
     const data = await res.json();
     if (id !== requestId.current) return;
     setItems(data.items);
+    setPeople(data.people ?? []);
     setLoading(false);
   }, []);
 
@@ -65,46 +73,80 @@ export function ComunidadDiscover() {
         <p className="rounded-2xl border border-[#2a2f37] bg-[#1c2026] px-6 py-12 text-center text-[#9099a3]">
           Buscando…
         </p>
-      ) : items.length === 0 ? (
+      ) : items.length === 0 && people.length === 0 ? (
         <p className="rounded-2xl border border-[#2a2f37] bg-[#1c2026] px-6 py-12 text-center text-[#9099a3]">
           {q ? "No encontramos a nadie con ese nombre." : "Todavía no hay rutinas de otros usuarios para seguir."}
         </p>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((routine) => (
-            <div
-              key={routine.id}
-              className="flex flex-col gap-3 rounded-2xl border border-[#2a2f37] bg-[#1c2026] p-5"
-            >
-              <div>
-                <Link
-                  href={`/app/rutinas/${routine.id}`}
-                  className="text-base font-bold text-[#f1f3f4] hover:text-[#4ade80]"
-                >
-                  {routine.name}
-                </Link>
-                <Link
-                  href={`/app/comunidad/${routine.ownerId}`}
-                  className="mt-1 inline-flex items-center gap-1 text-xs text-[#9099a3] hover:text-[#4ade80]"
-                >
-                  <PersonIcon className="h-3.5 w-3.5" />
-                  {routine.ownerDisplayName ?? "otro usuario"}
-                </Link>
+        <>
+          {people.length > 0 && (
+            <div className="flex flex-col gap-3">
+              <p className="text-xs font-semibold tracking-wide text-[#9099a3] uppercase">Personas</p>
+              <div className="flex flex-wrap gap-3">
+                {people.map((person) => (
+                  <Link
+                    key={person.id}
+                    href={`/app/comunidad/${person.id}`}
+                    className="flex items-center gap-3 rounded-2xl border border-[#2a2f37] bg-[#1c2026] px-4 py-3 transition-colors hover:border-[#4ade80]"
+                  >
+                    {person.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={person.avatarUrl}
+                        alt=""
+                        className="h-10 w-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#23272e] text-sm font-bold text-[#9099a3]">
+                        {person.displayName?.[0]?.toUpperCase() ?? "?"}
+                      </div>
+                    )}
+                    <span className="text-sm font-bold text-[#f1f3f4]">
+                      {person.displayName ?? "Usuario"}
+                    </span>
+                  </Link>
+                ))}
               </div>
-              {routine.description && (
-                <p className="line-clamp-2 text-sm text-[#9099a3]">{routine.description}</p>
-              )}
-              <form action={followRoutineAction.bind(null, routine.id)}>
-                <button
-                  type="submit"
-                  className="w-full rounded-[10px] border border-[#2a2f37] px-4 py-2 text-sm font-bold text-[#f1f3f4] transition-colors hover:border-[#4ade80]"
-                >
-                  Seguir esta rutina
-                </button>
-              </form>
             </div>
-          ))}
-        </div>
+          )}
+          {items.length > 0 && (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {items.map((routine) => (
+                <div
+                  key={routine.id}
+                  className="flex flex-col gap-3 rounded-2xl border border-[#2a2f37] bg-[#1c2026] p-5"
+                >
+                  <div className="flex flex-col gap-1">
+                    <Link
+                      href={`/app/rutinas/${routine.id}`}
+                      className="text-base font-bold text-[#f1f3f4] hover:text-[#4ade80]"
+                    >
+                      {routine.name}
+                    </Link>
+                    <Link
+                      href={`/app/comunidad/${routine.ownerId}`}
+                      className="inline-flex items-center gap-1 text-xs text-[#9099a3] hover:text-[#4ade80]"
+                    >
+                      <PersonIcon className="h-3.5 w-3.5" />
+                      {routine.ownerDisplayName ?? "otro usuario"}
+                    </Link>
+                  </div>
+                  {routine.description && (
+                    <p className="line-clamp-2 text-sm text-[#9099a3]">{routine.description}</p>
+                  )}
+                  <form action={followRoutineAction.bind(null, routine.id)}>
+                    <button
+                      type="submit"
+                      className="w-full rounded-[10px] border border-[#2a2f37] px-4 py-2 text-sm font-bold text-[#f1f3f4] transition-colors hover:border-[#4ade80]"
+                    >
+                      Seguir esta rutina
+                    </button>
+                  </form>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

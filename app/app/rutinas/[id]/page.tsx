@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { getRoutineDetail, listRoutineSessions } from "@/lib/routines";
 import { deleteRoutineAction, followRoutineAction, startSessionAction } from "@/lib/actions/routines";
+import { ExerciseThumb } from "@/app/components/ExerciseThumb";
 
 const BLOCK_LABELS: Record<string, string> = {
   single: "Ejercicio suelto",
@@ -27,12 +28,24 @@ export default async function RoutineDetailPage({
     <div className="flex-1 px-[clamp(20px,5vw,72px)] py-10">
       <div className="mx-auto flex max-w-[900px] flex-col gap-10">
         <div>
-          <p className="mb-2 text-xs font-semibold tracking-wide text-[#9099a3] uppercase">
-            {isOwner ? "Tu rutina" : `de ${routine.ownerDisplayName ?? "otro usuario"}`}
-          </p>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <h1 className="text-3xl font-extrabold">{routine.name}</h1>
+              <p className="mt-1 text-xs font-semibold tracking-wide text-[#9099a3] uppercase">
+                {isOwner ? (
+                  "Tu rutina"
+                ) : (
+                  <>
+                    de{" "}
+                    <Link
+                      href={`/app/comunidad/${routine.ownerId}`}
+                      className="normal-case text-[#9099a3] underline decoration-dotted hover:text-[#4ade80]"
+                    >
+                      {routine.ownerDisplayName ?? "otro usuario"}
+                    </Link>
+                  </>
+                )}
+              </p>
               {routine.description && (
                 <p className="mt-2 max-w-[58ch] text-[15px] text-[#9099a3]">
                   {routine.description}
@@ -92,11 +105,11 @@ export default async function RoutineDetailPage({
                     className="flex items-center gap-3 rounded-xl border border-[#23272e] bg-[#0d0f12] p-3"
                   >
                     {ex.exercise?.image && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={`/exercises/${ex.exercise.image}`}
-                        alt={ex.exercise.name}
-                        className="h-12 w-12 rounded-lg object-cover"
+                      <ExerciseThumb
+                        exerciseId={ex.exerciseId}
+                        image={ex.exercise.image}
+                        name={ex.exercise.name}
+                        imgClassName="h-12 w-12 rounded-lg object-cover"
                       />
                     )}
                     <div className="flex-1">
