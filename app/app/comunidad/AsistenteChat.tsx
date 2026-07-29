@@ -1,12 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import type { AssistantUIMessage } from "@/lib/agents/assistant-agent";
 import { createRoutineAction, type FormActionResult } from "@/lib/actions/routines";
 import { ExerciseThumb } from "@/app/components/ExerciseThumb";
+
+const CHAT_HISTORY_KEY = "sakatl:assistant-chat-history";
+const MAX_HISTORY_MESSAGES = 20;
+
+function trimHistory(messages: AssistantUIMessage[]): AssistantUIMessage[] {
+  return messages.length > MAX_HISTORY_MESSAGES
+    ? messages.slice(messages.length - MAX_HISTORY_MESSAGES)
+    : messages;
+}
+
+function loadStoredMessages(): AssistantUIMessage[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(CHAT_HISTORY_KEY);
+    return raw ? trimHistory(JSON.parse(raw) as AssistantUIMessage[]) : [];
+  } catch {
+    return [];
+  }
+}
 
 type ProposeRoutinePart = Extract<AssistantUIMessage["parts"][number], { type: "tool-proposeRoutine" }>;
 type ProposeRoutineOutputPart = Extract<ProposeRoutinePart, { state: "output-available" }>;
@@ -98,9 +117,22 @@ function RoutineProposalCard({ part }: { part: ProposeRoutineOutputPart }) {
 
 export function AsistenteChat() {
   const [input, setInput] = useState("");
-  const { messages, sendMessage, status } = useChat<AssistantUIMessage>({
+  const [initialMessages] = useState(loadStoredMessages);
+  const { messages, sendMessage, status, setMessages } = useChat<AssistantUIMessage>({
+    messages: initialMessages,
     transport: new DefaultChatTransport({ api: "/api/assistant" }),
   });
+
+  useEffect(() => {
+    const trimmed = trimHistory(messages);
+    if (trimmed.length !== messages.length) {
+      setMessages(trimmed);
+      return;
+    }
+    if (trimmed.length > 0) {
+      window.localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(trimmed));
+    }
+  }, [messages, setMessages]);
 
   return (
     <div className="flex flex-col gap-4">
