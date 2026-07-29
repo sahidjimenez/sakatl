@@ -8,9 +8,12 @@ import {
   completeSession,
   createRoutine,
   deleteRoutine,
+  deleteSetLog,
   followRoutine,
   startSession,
+  toggleRoutineLike,
   updateRoutine,
+  updateSessionNotes,
   updateWeeklyGoal,
   upsertSetLog,
   type RoutineInput,
@@ -99,4 +102,29 @@ export async function logSetFormAction(sessionId: string, formData: FormData) {
     completed: true,
   });
   revalidatePath(`/app/sesiones/${sessionId}`);
+}
+
+export async function deleteSetLogAction(
+  sessionId: string,
+  blockExerciseId: string,
+  setNumber: number,
+) {
+  const userId = await requireUser();
+  await deleteSetLog(sessionId, userId, blockExerciseId, setNumber);
+  revalidatePath(`/app/sesiones/${sessionId}`);
+}
+
+export async function updateSessionNotesAction(sessionId: string, formData: FormData) {
+  const userId = await requireUser();
+  const notes = String(formData.get("notes") ?? "");
+  await updateSessionNotes(sessionId, userId, notes);
+  revalidatePath(`/app/sesiones/${sessionId}`);
+}
+
+export async function toggleRoutineLikeAction(routineId: string) {
+  const userId = await requireUser();
+  const result = await toggleRoutineLike(routineId, userId);
+  revalidatePath(`/app/rutinas/${routineId}`);
+  revalidatePath("/app/comunidad");
+  return result;
 }

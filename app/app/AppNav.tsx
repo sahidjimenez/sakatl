@@ -23,6 +23,15 @@ function RoutinesIcon({ className }: { className?: string }) {
   );
 }
 
+function EstadisticasIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M4 20V10M10 20V4M16 20v-7" />
+      <path d="M3 20h18" />
+    </svg>
+  );
+}
+
 function RegistroIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -57,6 +66,7 @@ const NAV_ITEMS = [
   { href: "/app", label: "Inicio", icon: HomeIcon },
   { href: "/app/rutinas", label: "Rutinas", icon: RoutinesIcon },
   { href: "/app/registro", label: "Registro", icon: RegistroIcon },
+  { href: "/app/estadisticas", label: "Estadísticas", icon: EstadisticasIcon },
   { href: "/app/comunidad", label: "Comunidad", icon: ComunidadIcon, badge: "IA" },
   { href: "/app/perfil", label: "Perfil", icon: PerfilIcon },
 ];

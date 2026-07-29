@@ -6,6 +6,8 @@ const isPublicRoute = createRouteMatcher([
   "/api/exercises(.*)",
   "/sign-in(.*)",
   "/sign-up(.*)",
+  // Autenticado con CRON_SECRET (header Authorization), no con sesión de Clerk.
+  "/api/cron(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

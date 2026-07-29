@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { followRoutineAction } from "@/lib/actions/routines";
+import { LikeButton } from "@/app/components/LikeButton";
 
 type CommunityRoutine = {
   id: string;
@@ -10,6 +11,8 @@ type CommunityRoutine = {
   description: string | null;
   ownerId: string;
   ownerDisplayName: string | null;
+  likesCount: number;
+  likedByMe: boolean;
 };
 
 type CommunityPerson = {
@@ -134,6 +137,11 @@ export function ComunidadDiscover() {
                   {routine.description && (
                     <p className="line-clamp-2 text-sm text-[#9099a3]">{routine.description}</p>
                   )}
+                  <LikeButton
+                    routineId={routine.id}
+                    initialLiked={routine.likedByMe}
+                    initialCount={routine.likesCount}
+                  />
                   <form action={followRoutineAction.bind(null, routine.id)}>
                     <button
                       type="submit"

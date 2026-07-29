@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import {
   createRoutine,
+  getRoutineLikesBatch,
   handleApiError,
   listCommunityRoutines,
   listMyRoutines,
@@ -22,7 +23,16 @@ export async function GET(request: NextRequest) {
         listCommunityRoutines(userId, offset, limit, q),
         q ? searchCommunityUsers(userId, q) : Promise.resolve([]),
       ]);
-      return NextResponse.json({ items, people });
+      const likesByRoutine = await getRoutineLikesBatch(
+        items.map((r) => r.id),
+        userId,
+      );
+      const itemsWithLikes = items.map((r) => ({
+        ...r,
+        likesCount: likesByRoutine.get(r.id)?.likesCount ?? 0,
+        likedByMe: likesByRoutine.get(r.id)?.liked ?? false,
+      }));
+      return NextResponse.json({ items: itemsWithLikes, people });
     }
 
     const items = await listMyRoutines(userId);

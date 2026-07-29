@@ -4,6 +4,7 @@ import { getDb } from "./db";
 import {
   routineBlockExercises,
   routineBlocks,
+  routineLikes,
   routines,
   setLogs,
   users,
@@ -669,6 +670,106 @@ export async function upsertSetLog(sessionId: string, userId: string, rawInput: 
   return log;
 }
 
+export async function toggleRoutineLike(routineId: string, userId: string) {
+  const routine = await getRoutineRow(routineId);
+  if (!routine) throw new ApiError(404, "Rutina no encontrada.");
+
+  const db = getDb();
+  const [existing] = await db
+    .select({ id: routineLikes.id })
+    .from(routineLikes)
+    .where(and(eq(routineLikes.routineId, routineId), eq(routineLikes.userId, userId)))
+    .limit(1);
+
+  if (existing) {
+    await db.delete(routineLikes).where(eq(routineLikes.id, existing.id));
+  } else {
+    await db.insert(routineLikes).values({ routineId, userId });
+  }
+
+  const [row] = await db
+    .select({ count: sql<string>`count(*)` })
+    .from(routineLikes)
+    .where(eq(routineLikes.routineId, routineId));
+
+  return { liked: !existing, likesCount: row ? Number(row.count) : 0 };
+}
+
+export async function getRoutineLikeInfo(routineId: string, userId: string) {
+  const db = getDb();
+  const [row] = await db
+    .select({ count: sql<string>`count(*)` })
+    .from(routineLikes)
+    .where(eq(routineLikes.routineId, routineId));
+  const [liked] = await db
+    .select({ id: routineLikes.id })
+    .from(routineLikes)
+    .where(and(eq(routineLikes.routineId, routineId), eq(routineLikes.userId, userId)))
+    .limit(1);
+  return { likesCount: row ? Number(row.count) : 0, liked: Boolean(liked) };
+}
+
+export async function getRoutineLikesBatch(routineIds: string[], userId: string) {
+  const map = new Map<string, { likesCount: number; liked: boolean }>();
+  if (routineIds.length === 0) return map;
+
+  const db = getDb();
+  const counts = await db
+    .select({ routineId: routineLikes.routineId, count: sql<string>`count(*)` })
+    .from(routineLikes)
+    .where(inArray(routineLikes.routineId, routineIds))
+    .groupBy(routineLikes.routineId);
+  const likedRows = await db
+    .select({ routineId: routineLikes.routineId })
+    .from(routineLikes)
+    .where(and(inArray(routineLikes.routineId, routineIds), eq(routineLikes.userId, userId)));
+  const likedSet = new Set(likedRows.map((r) => r.routineId));
+
+  for (const id of routineIds) {
+    map.set(id, { likesCount: 0, liked: likedSet.has(id) });
+  }
+  for (const c of counts) {
+    const entry = map.get(c.routineId) ?? { likesCount: 0, liked: likedSet.has(c.routineId) };
+    entry.likesCount = Number(c.count);
+    map.set(c.routineId, entry);
+  }
+  return map;
+}
+
+export async function deleteSetLog(
+  sessionId: string,
+  userId: string,
+  blockExerciseId: string,
+  setNumber: number,
+) {
+  const session = await getSessionRow(sessionId);
+  if (!session) throw new ApiError(404, "Sesión no encontrada.");
+  if (session.userId !== userId) throw new ApiError(403, "No es tu sesión.");
+
+  const db = getDb();
+  await db
+    .delete(setLogs)
+    .where(
+      and(
+        eq(setLogs.sessionId, sessionId),
+        eq(setLogs.blockExerciseId, blockExerciseId),
+        eq(setLogs.setNumber, setNumber),
+      ),
+    );
+}
+
+export async function updateSessionNotes(sessionId: string, userId: string, notes: string) {
+  const session = await getSessionRow(sessionId);
+  if (!session) throw new ApiError(404, "Sesión no encontrada.");
+  if (session.userId !== userId) throw new ApiError(403, "No es tu sesión.");
+
+  const db = getDb();
+  await db
+    .update(workoutSessions)
+    .set({ notes: notes.trim().slice(0, 2000) || null })
+    .where(eq(workoutSessions.id, sessionId));
+}
+
 // ---- Dashboard "Inicio" ----
 
 const DAY_LABELS = ["", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
@@ -678,7 +779,7 @@ function isoWeekday(date: Date): number {
   return day === 0 ? 7 : day;
 }
 
-function startOfWeekUTC(date: Date): Date {
+export function startOfWeekUTC(date: Date): Date {
   const start = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
   start.setUTCDate(start.getUTCDate() - (isoWeekday(date) - 1));
   return start;
@@ -797,6 +898,80 @@ export async function getTodayAndUpcoming(userId: string) {
   }
 
   return { today, upcoming, scheduledWeekdays };
+}
+
+export type ScheduledToday = { userId: string; routineName: string };
+
+export async function getUsersScheduledToday(): Promise<ScheduledToday[]> {
+  const db = getDb();
+  const todayIso = isoWeekday(new Date());
+  const rows = await db
+    .select({
+      ownerId: routines.ownerId,
+      name: routines.name,
+      scheduledDays: routines.scheduledDays,
+    })
+    .from(routines);
+
+  return rows
+    .filter((r) => r.scheduledDays.includes(todayIso))
+    .map((r) => ({ userId: r.ownerId, routineName: r.name }));
+}
+
+export type WeekdayRoutineCard = {
+  id: string;
+  name: string;
+  description: string | null;
+  blockCount: number;
+};
+
+export async function getRoutinesGroupedByWeekday(
+  userId: string,
+): Promise<Record<number, WeekdayRoutineCard[]>> {
+  const db = getDb();
+  const rows = await db
+    .select({
+      id: routines.id,
+      name: routines.name,
+      description: routines.description,
+      scheduledDays: routines.scheduledDays,
+    })
+    .from(routines)
+    .where(eq(routines.ownerId, userId));
+
+  const routineIds = rows.map((r) => r.id);
+  const blocks = routineIds.length
+    ? await db
+        .select({ routineId: routineBlocks.routineId })
+        .from(routineBlocks)
+        .where(inArray(routineBlocks.routineId, routineIds))
+    : [];
+  const blockCountByRoutine = new Map<string, number>();
+  for (const b of blocks) {
+    blockCountByRoutine.set(b.routineId, (blockCountByRoutine.get(b.routineId) ?? 0) + 1);
+  }
+
+  const byWeekday: Record<number, WeekdayRoutineCard[]> = {
+    1: [],
+    2: [],
+    3: [],
+    4: [],
+    5: [],
+    6: [],
+    7: [],
+  };
+  for (const r of rows) {
+    const card: WeekdayRoutineCard = {
+      id: r.id,
+      name: r.name,
+      description: r.description,
+      blockCount: blockCountByRoutine.get(r.id) ?? 0,
+    };
+    for (const day of r.scheduledDays) {
+      if (byWeekday[day]) byWeekday[day].push(card);
+    }
+  }
+  return byWeekday;
 }
 
 export async function getStreak(userId: string): Promise<number> {

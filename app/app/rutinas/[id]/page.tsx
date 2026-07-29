@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
-import { getRoutineDetail, listRoutineSessions } from "@/lib/routines";
+import { getRoutineDetail, getRoutineLikeInfo, listRoutineSessions } from "@/lib/routines";
 import { deleteRoutineAction, followRoutineAction, startSessionAction } from "@/lib/actions/routines";
 import { ExerciseThumb } from "@/app/components/ExerciseThumb";
+import { LikeButton } from "@/app/components/LikeButton";
+import { ConfirmButton } from "@/app/components/ConfirmButton";
 
 const BLOCK_LABELS: Record<string, string> = {
   single: "Ejercicio suelto",
@@ -22,7 +24,10 @@ export default async function RoutineDetailPage({
   if (!routine) notFound();
 
   const isOwner = routine.ownerId === userId;
-  const sessions = isOwner ? await listRoutineSessions(id, userId) : [];
+  const [sessions, likeInfo] = await Promise.all([
+    isOwner ? listRoutineSessions(id, userId) : Promise.resolve([]),
+    getRoutineLikeInfo(id, userId),
+  ]);
 
   return (
     <div className="flex-1 px-[clamp(20px,5vw,72px)] py-10">
@@ -51,6 +56,13 @@ export default async function RoutineDetailPage({
                   {routine.description}
                 </p>
               )}
+              <div className="mt-3">
+                <LikeButton
+                  routineId={routine.id}
+                  initialLiked={likeInfo.liked}
+                  initialCount={likeInfo.likesCount}
+                />
+              </div>
             </div>
             <div className="flex flex-wrap gap-3">
               {isOwner ? (
@@ -69,14 +81,12 @@ export default async function RoutineDetailPage({
                   >
                     Editar
                   </Link>
-                  <form action={deleteRoutineAction.bind(null, routine.id)}>
-                    <button
-                      type="submit"
-                      className="rounded-[10px] border border-[#2a2f37] px-5 py-2.5 text-sm font-bold text-[#9099a3] hover:border-red-500 hover:text-red-400"
-                    >
-                      Borrar
-                    </button>
-                  </form>
+                  <ConfirmButton
+                    action={deleteRoutineAction.bind(null, routine.id)}
+                    label="Borrar"
+                    confirmLabel="¿Borrar esta rutina?"
+                    className="rounded-[10px] border border-[#2a2f37] px-5 py-2.5 text-sm font-bold text-[#9099a3] hover:border-red-500 hover:text-red-400"
+                  />
                 </>
               ) : (
                 <form action={followRoutineAction.bind(null, routine.id)}>

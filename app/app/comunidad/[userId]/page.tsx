@@ -2,9 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { requireUser } from "@/lib/auth";
-import { getStreak, getUserProfile, getWeeklyProgress, listMyRoutines } from "@/lib/routines";
+import { getUserProfile, getWeeklyProgress, listMyRoutines } from "@/lib/routines";
+import { getBestStreak, getLifetimeVolume, getStreakHistory } from "@/lib/stats";
 import { followRoutineAction } from "@/lib/actions/routines";
 import { formatDuration, formatRelativeDate } from "@/lib/format";
+import { Sparkline } from "@/app/components/Charts";
 
 export const metadata: Metadata = {
   title: "Perfil de usuario — Sakatl",
@@ -38,10 +40,12 @@ export default async function PerfilUsuarioPage({
   if (!profile) notFound();
 
   const isSelf = userId === currentUserId;
-  const [routines, progress, streak] = await Promise.all([
+  const [routines, progress, streakHistory, bestStreak, lifetimeVolume] = await Promise.all([
     listMyRoutines(userId),
     getWeeklyProgress(userId),
-    getStreak(userId),
+    getStreakHistory(userId, 14),
+    getBestStreak(userId),
+    getLifetimeVolume(userId),
   ]);
 
   return (
@@ -75,11 +79,23 @@ export default async function PerfilUsuarioPage({
             </p>
             <p className="text-sm text-[#9099a3]">Meta semanal: {profile.weeklyGoal} entrenamientos</p>
           </div>
-          {streak > 0 && (
-            <span className="ml-auto flex items-center gap-1.5 rounded-full border border-[#2a2f37] bg-[#0d0f12] px-3 py-1.5 text-sm font-bold text-[#f97316]">
-              🔥 {streak}
-            </span>
-          )}
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="rounded-2xl border border-[#2a2f37] bg-[#1c2026] p-5">
+            <p className="mb-1 text-xs text-[#9099a3]">Racha</p>
+            <Sparkline data={streakHistory} />
+          </div>
+          <div className="rounded-2xl border border-[#2a2f37] bg-[#1c2026] p-5">
+            <p className="text-xs text-[#9099a3]">Mejor racha</p>
+            <p className="mt-1 text-2xl font-extrabold text-[#f1f3f4]">🏆 {bestStreak}</p>
+          </div>
+          <div className="rounded-2xl border border-[#2a2f37] bg-[#1c2026] p-5">
+            <p className="text-xs text-[#9099a3]">Volumen total</p>
+            <p className="mt-1 text-2xl font-extrabold text-[#f1f3f4]">
+              {Math.round(lifetimeVolume).toLocaleString("es")} kg
+            </p>
+          </div>
         </div>
 
         <div className="rounded-2xl border border-[#2a2f37] bg-[#1c2026] p-6">

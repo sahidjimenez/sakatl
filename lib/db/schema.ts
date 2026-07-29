@@ -84,6 +84,8 @@ export const workoutSessions = pgTable("workout_sessions", {
     .references(() => users.id, { onDelete: "cascade" }),
   startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
   completedAt: timestamp("completed_at", { withTimezone: true }),
+  // Nota libre sobre cómo se sintió la sesión (dolores, energía, etc.).
+  notes: text("notes"),
 });
 
 // Un set real, marcado durante la sesión (check + peso + reps).
@@ -115,6 +117,8 @@ export const setLogs = pgTable(
 export const usersRelations = relations(users, ({ many }) => ({
   routines: many(routines),
   workoutSessions: many(workoutSessions),
+  bodyMetrics: many(bodyMetrics),
+  pushSubscriptions: many(pushSubscriptions),
 }));
 
 export const routinesRelations = relations(routines, ({ one, many }) => ({
@@ -125,6 +129,7 @@ export const routinesRelations = relations(routines, ({ one, many }) => ({
   }),
   blocks: many(routineBlocks),
   sessions: many(workoutSessions),
+  likes: many(routineLikes),
 }));
 
 export const routineBlocksRelations = relations(routineBlocks, ({ one, many }) => ({
@@ -155,4 +160,61 @@ export const setLogsRelations = relations(setLogs, ({ one }) => ({
     fields: [setLogs.blockExerciseId],
     references: [routineBlockExercises.id],
   }),
+}));
+
+// Registro de peso corporal en el tiempo (independiente de las rutinas), para
+// la vista de estadísticas de progreso.
+export const bodyMetrics = pgTable("body_metrics", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  weightKg: numeric("weight_kg", { precision: 5, scale: 2, mode: "number" }).notNull(),
+  recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const bodyMetricsRelations = relations(bodyMetrics, ({ one }) => ({
+  user: one(users, { fields: [bodyMetrics.userId], references: [users.id] }),
+}));
+
+// Like de un usuario a una rutina (propia o de otro), para engagement en Comunidad.
+export const routineLikes = pgTable(
+  "routine_likes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    routineId: uuid("routine_id")
+      .notNull()
+      .references(() => routines.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("routine_likes_routine_user_idx").on(table.routineId, table.userId)],
+);
+
+export const routineLikesRelations = relations(routineLikes, ({ one }) => ({
+  routine: one(routines, { fields: [routineLikes.routineId], references: [routines.id] }),
+  user: one(users, { fields: [routineLikes.userId], references: [users.id] }),
+}));
+
+// Suscripción Web Push del navegador de un usuario, para recordatorios (ej. "hoy
+// toca entrenar"). Un usuario puede tener varias (un dispositivo/navegador c/u).
+export const pushSubscriptions = pgTable(
+  "push_subscriptions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    endpoint: text("endpoint").notNull(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("push_subscriptions_endpoint_idx").on(table.endpoint)],
+);
+
+export const pushSubscriptionsRelations = relations(pushSubscriptions, ({ one }) => ({
+  user: one(users, { fields: [pushSubscriptions.userId], references: [users.id] }),
 }));

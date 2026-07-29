@@ -2,8 +2,16 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { getSessionDetail } from "@/lib/routines";
-import { completeSessionAction, logSetFormAction } from "@/lib/actions/routines";
+import {
+  completeSessionAction,
+  deleteSetLogAction,
+  logSetFormAction,
+  updateSessionNotesAction,
+} from "@/lib/actions/routines";
 import { ExerciseThumb } from "@/app/components/ExerciseThumb";
+import { RestTimer } from "@/app/components/RestTimer";
+import { SetMarkButton } from "@/app/components/SetMarkButton";
+import { ConfirmButton } from "@/app/components/ConfirmButton";
 
 const BLOCK_LABELS: Record<string, string> = {
   single: "Ejercicio suelto",
@@ -23,6 +31,7 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
 
   return (
     <div className="flex-1 px-[clamp(20px,5vw,72px)] py-10">
+      <RestTimer />
       <div className="mx-auto flex max-w-[720px] flex-col gap-8">
         <div>
           <Link
@@ -49,6 +58,25 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
           <p className="mt-2 text-sm text-[#9099a3]">
             Empezada el {new Date(session.startedAt).toLocaleString("es")}
           </p>
+        </div>
+
+        <div className="rounded-2xl border border-[#2a2f37] bg-[#1c2026] p-5">
+          <p className="mb-3 text-sm font-bold text-[#f1f3f4]">Notas de la sesión</p>
+          <form action={updateSessionNotesAction.bind(null, session.id)} className="flex flex-col gap-3">
+            <textarea
+              name="notes"
+              rows={3}
+              defaultValue={session.notes ?? ""}
+              placeholder="¿Cómo te sentiste? ¿Algún dolor o molestia?"
+              className="w-full resize-none rounded-[10px] border border-[#2a2f37] bg-[#0d0f12] px-3.5 py-3 text-sm text-[#f1f3f4] placeholder:text-[#6b7280] focus:outline-none focus:ring-1 focus:ring-[#4ade80]"
+            />
+            <button
+              type="submit"
+              className="self-start rounded-[10px] border border-[#2a2f37] px-4 py-2 text-sm font-bold text-[#f1f3f4] hover:border-[#4ade80]"
+            >
+              Guardar nota
+            </button>
+          </form>
         </div>
 
         <div className="flex flex-col gap-4">
@@ -83,44 +111,49 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
                         const setNumber = setIdx + 1;
                         const log = logsByKey.get(`${ex.id}-${setNumber}`);
                         return (
-                          <form
+                          <div
                             key={setNumber}
-                            action={logSetFormAction.bind(null, session.id)}
                             className="flex flex-wrap items-center gap-3 rounded-xl border border-[#23272e] bg-[#0d0f12] p-3.5"
                           >
-                            <input type="hidden" name="blockExerciseId" value={ex.id} />
-                            <input type="hidden" name="setNumber" value={setNumber} />
-                            <span className="w-14 shrink-0 text-sm font-semibold text-[#9099a3]">
-                              Set {setNumber}
-                            </span>
-                            <input
-                              type="number"
-                              name="weight"
-                              step="0.5"
-                              min={0}
-                              placeholder={ex.targetWeight != null ? String(ex.targetWeight) : "kg"}
-                              defaultValue={log?.weight ?? undefined}
-                              className="min-h-[48px] w-24 rounded-[10px] border border-[#2a2f37] bg-[#1c2026] px-3.5 text-base text-[#f1f3f4] placeholder:text-[#6b7280] focus:outline-none focus:ring-1 focus:ring-[#4ade80]"
-                            />
-                            <input
-                              type="number"
-                              name="reps"
-                              min={0}
-                              placeholder="reps"
-                              defaultValue={log?.reps ?? undefined}
-                              className="min-h-[48px] w-24 rounded-[10px] border border-[#2a2f37] bg-[#1c2026] px-3.5 text-base text-[#f1f3f4] placeholder:text-[#6b7280] focus:outline-none focus:ring-1 focus:ring-[#4ade80]"
-                            />
-                            <button
-                              type="submit"
-                              className={`ml-auto min-h-[48px] rounded-[10px] px-4 text-sm font-bold ${
-                                log?.completed
-                                  ? "bg-[#22c55e]/20 text-[#4ade80]"
-                                  : "border border-[#2a2f37] text-[#f1f3f4] hover:border-[#4ade80]"
-                              }`}
+                            <form
+                              action={logSetFormAction.bind(null, session.id)}
+                              className="flex flex-1 flex-wrap items-center gap-3"
                             >
-                              {log?.completed ? "✓ Hecho" : "Marcar"}
-                            </button>
-                          </form>
+                              <input type="hidden" name="blockExerciseId" value={ex.id} />
+                              <input type="hidden" name="setNumber" value={setNumber} />
+                              <span className="w-14 shrink-0 text-sm font-semibold text-[#9099a3]">
+                                Set {setNumber}
+                              </span>
+                              <input
+                                type="number"
+                                name="weight"
+                                step="0.5"
+                                min={0}
+                                placeholder={ex.targetWeight != null ? String(ex.targetWeight) : "kg"}
+                                defaultValue={log?.weight ?? undefined}
+                                className="min-h-[48px] w-24 rounded-[10px] border border-[#2a2f37] bg-[#1c2026] px-3.5 text-base text-[#f1f3f4] placeholder:text-[#6b7280] focus:outline-none focus:ring-1 focus:ring-[#4ade80]"
+                              />
+                              <input
+                                type="number"
+                                name="reps"
+                                min={0}
+                                placeholder="reps"
+                                defaultValue={log?.reps ?? undefined}
+                                className="min-h-[48px] w-24 rounded-[10px] border border-[#2a2f37] bg-[#1c2026] px-3.5 text-base text-[#f1f3f4] placeholder:text-[#6b7280] focus:outline-none focus:ring-1 focus:ring-[#4ade80]"
+                              />
+                              <SetMarkButton completed={Boolean(log?.completed)} />
+                            </form>
+                            {log?.completed && (
+                              <ConfirmButton
+                                action={deleteSetLogAction.bind(null, session.id, ex.id, setNumber)}
+                                label="✕"
+                                ariaLabel="Borrar este registro"
+                                confirmLabel=""
+                                confirmActionLabel="Borrar"
+                                className="flex min-h-[48px] items-center justify-center rounded-[10px] border border-[#2a2f37] px-3 text-sm text-[#9099a3] hover:border-red-500 hover:text-red-400"
+                              />
+                            )}
+                          </div>
                         );
                       })}
                     </div>
