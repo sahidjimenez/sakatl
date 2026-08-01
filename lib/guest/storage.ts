@@ -82,10 +82,15 @@ const PREFIX = "sakatl:guest:";
 const META_KEY = `${PREFIX}meta`;
 const ROUTINES_KEY = `${PREFIX}routines`;
 const SESSIONS_KEY = `${PREFIX}sessions`;
+const ASSISTANT_USAGE_KEY = `${PREFIX}assistant-usage`;
 
 export const GUEST_TTL_DAYS = 14;
 const TTL_MS = GUEST_TTL_DAYS * 24 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Cuántos días debe esperar un invitado entre rutinas generadas por IA. */
+export const GUEST_ASSISTANT_COOLDOWN_DAYS = 7;
+const ASSISTANT_COOLDOWN_MS = GUEST_ASSISTANT_COOLDOWN_DAYS * DAY_MS;
 
 type GuestMeta = { createdAt: string };
 
@@ -130,6 +135,7 @@ function pruneIfExpired() {
     window.localStorage.removeItem(META_KEY);
     window.localStorage.removeItem(ROUTINES_KEY);
     window.localStorage.removeItem(SESSIONS_KEY);
+    window.localStorage.removeItem(ASSISTANT_USAGE_KEY);
   }
 }
 
@@ -379,4 +385,26 @@ export function addGuestExtraExercise(
   };
   sessions[idx] = { ...session, extraBlocks: [...(session.extraBlocks ?? []), extraBlock] };
   writeSessions(sessions);
+}
+
+type GuestAssistantUsage = { lastUsedAt: string };
+
+/**
+ * El asistente de IA para invitados sólo puede generar 1 rutina por semana
+ * (sin cuenta no hay forma de cobrar/limitar en el servidor por usuario, así
+ * que el límite vive aquí y se refuerza también con un tope por IP en la API).
+ */
+export function getGuestAssistantCooldown(): { locked: boolean; daysRemaining: number } {
+  pruneIfExpired();
+  const usage = readJSON<GuestAssistantUsage | null>(ASSISTANT_USAGE_KEY, null);
+  if (!usage) return { locked: false, daysRemaining: 0 };
+  const elapsedMs = Date.now() - new Date(usage.lastUsedAt).getTime();
+  if (elapsedMs >= ASSISTANT_COOLDOWN_MS) return { locked: false, daysRemaining: 0 };
+  return { locked: true, daysRemaining: Math.max(1, Math.ceil((ASSISTANT_COOLDOWN_MS - elapsedMs) / DAY_MS)) };
+}
+
+export function markGuestAssistantUsed(): void {
+  touchGuestMeta();
+  const usage: GuestAssistantUsage = { lastUsedAt: new Date().toISOString() };
+  writeJSON(ASSISTANT_USAGE_KEY, usage);
 }

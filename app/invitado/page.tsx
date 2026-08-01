@@ -23,12 +23,20 @@ export default function InvitadoHomePage() {
             <h1 className="text-3xl font-extrabold">Mis rutinas (invitado)</h1>
             <p className="mt-1 text-[#9099a3]">Guardadas solo en este navegador.</p>
           </div>
-          <Link
-            href="/invitado/nueva"
-            className="rounded-[10px] bg-[#22c55e] px-5 py-2.5 text-sm font-bold text-[#08150d]"
-          >
-            + Nueva rutina
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/invitado/asistente"
+              className="rounded-[10px] border border-[#2a2f37] bg-[#1c2026] px-5 py-2.5 text-sm font-bold text-[#f1f3f4] hover:border-[#4ade80]"
+            >
+              ✨ Crear con IA
+            </Link>
+            <Link
+              href="/invitado/nueva"
+              className="rounded-[10px] bg-[#22c55e] px-5 py-2.5 text-sm font-bold text-[#08150d]"
+            >
+              + Nueva rutina
+            </Link>
+          </div>
         </div>
 
         {routines === null ? null : routines.length === 0 ? (
