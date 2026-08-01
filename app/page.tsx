@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import HomeNav from "./HomeNav";
+import { CreateRoutineCTA } from "./CreateRoutineCTA";
 import "./home.css";
 
 export const metadata: Metadata = {
@@ -28,10 +29,8 @@ export default function Home() {
             lo que te falte.
           </p>
           <div className="row">
-            <Link href="/app?view=mobile">
-              <button type="button" className="btn btn-primary">Crear mi rutina</button>
-            </Link>
-            <Link href="/app?view=mobile">
+            <CreateRoutineCTA label="Crear mi rutina" className="btn btn-primary" />
+            <Link href="/comunidad">
               <button type="button" className="btn btn-ghost">Ver rutinas de la comunidad</button>
             </Link>
           </div>
@@ -131,9 +130,7 @@ export default function Home() {
               placeholder="tu@correo.com"
               aria-label="Correo electrónico"
             />
-            <Link href="/app?view=desktop">
-              <button type="button" className="btn btn-primary">Empezar</button>
-            </Link>
+            <CreateRoutineCTA label="Empezar" className="btn btn-primary" />
           </div>
         </section>
 

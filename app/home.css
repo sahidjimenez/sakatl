@@ -85,6 +85,19 @@
 .home-page .signup .input { flex: 1; }
 .home-page .signup .input, .home-page .signup .btn { min-height: 44px; }
 .home-page .footer { padding: calc(2 * var(--leading)) 0; font-size: 13px; line-height: var(--leading); color: #6b7280; border-top: 1px solid #23272e; }
+.home-page .modal-backdrop { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.7); padding: 20px; }
+.home-page .modal-panel { width: 100%; max-width: 420px; background: #1c2026; border-radius: 16px; padding: 28px; }
+.home-page .modal-title { font-size: 22px; font-weight: 800; margin: 0 0 6px; color: #f1f3f4; }
+.home-page .modal-lead { font-size: 14px; line-height: 1.5; color: #9099a3; margin: 0 0 20px; }
+.home-page .modal-actions { display: flex; flex-direction: column; gap: 10px; }
+.home-page .modal-actions .btn { width: 100%; }
+.home-page .modal-signup-hint { font-size: 13px; color: #9099a3; text-align: center; margin: 8px 0 0; }
+.home-page .modal-signup-hint a { color: #4ade80; text-decoration: none; }
+.home-page .modal-divider { display: flex; align-items: center; gap: 12px; margin: 18px 0; font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.06em; }
+.home-page .modal-divider::before, .home-page .modal-divider::after { content: ""; flex: 1; height: 1px; background: #2a2f37; }
+.home-page .modal-note { font-size: 12px; line-height: 1.5; color: #6b7280; margin: 10px 0 0; }
+.home-page .modal-close { position: absolute; top: 16px; right: 16px; background: transparent; border: 1px solid #2a2f37; color: #9099a3; border-radius: 999px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; }
+.home-page .modal-panel { position: relative; }
 @media (max-width: 1080px) {
   .home-page .cols { grid-template-columns: repeat(2, 1fr); }
   .home-page .col:last-child { grid-column: 1 / -1; }

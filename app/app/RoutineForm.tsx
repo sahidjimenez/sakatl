@@ -84,14 +84,41 @@ export type RoutineFormInitial = {
   }>;
 };
 
+// Superset de RoutineInput: incluye exerciseName/exerciseImage por bloque para
+// que consumidores sin base de datos (modo invitado) puedan mostrar el
+// ejercicio sin volver a resolverlo contra el catálogo. Los campos extra no
+// afectan a los server actions, que solo leen las claves que conocen.
+export type RoutineFormSubmitInput = RoutineInput & {
+  blocks: Array<{
+    type: BlockType;
+    exercises: Array<{
+      exerciseId: string;
+      exerciseName: string | null;
+      exerciseImage: string | null;
+      plannedSets: number;
+      targetRepsMin: number | null;
+      targetRepsMax: number | null;
+      targetWeight: number | null;
+    }>;
+  }>;
+};
+
+type RoutineFormSaveResult = { error: string } | { ok: true; id: string };
+
 export default function RoutineForm({
   mode,
   routineId,
   initial,
+  onSave,
+  resultHref,
 }: {
   mode: "create" | "edit";
   routineId?: string;
   initial?: RoutineFormInitial;
+  /** Por defecto llama a createRoutineAction/updateRoutineAction. Pasar para guardar en otro lado (p.ej. modo invitado). */
+  onSave?: (input: RoutineFormSubmitInput) => Promise<RoutineFormSaveResult>;
+  /** Por defecto `/app/rutinas/${id}`. */
+  resultHref?: (id: string) => string;
 }) {
   const router = useRouter();
   const [name, setName] = useState(initial?.name ?? "");
@@ -153,7 +180,7 @@ export default function RoutineForm({
       }
     }
 
-    const input: RoutineInput = {
+    const input: RoutineFormSubmitInput = {
       name: name.trim(),
       description: description.trim() || null,
       scheduledDays,
@@ -161,6 +188,8 @@ export default function RoutineForm({
         type: b.type,
         exercises: b.exercises.map((ex) => ({
           exerciseId: ex.exerciseId!,
+          exerciseName: ex.exerciseName,
+          exerciseImage: ex.exerciseImage,
           plannedSets: ex.plannedSets,
           targetRepsMin: ex.targetRepsMin,
           targetRepsMax: ex.targetRepsMax,
@@ -170,8 +199,9 @@ export default function RoutineForm({
     };
 
     setSubmitting(true);
-    const result =
-      mode === "edit" && routineId
+    const result = onSave
+      ? await onSave(input)
+      : mode === "edit" && routineId
         ? await updateRoutineAction(routineId, input)
         : await createRoutineAction(input);
     setSubmitting(false);
@@ -180,7 +210,7 @@ export default function RoutineForm({
       setError(result.error);
       return;
     }
-    router.push(`/app/rutinas/${result.id}`);
+    router.push(resultHref ? resultHref(result.id) : `/app/rutinas/${result.id}`);
   }
 
   return (

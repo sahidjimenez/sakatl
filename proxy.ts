@@ -6,6 +6,11 @@ const isPublicRoute = createRouteMatcher([
   "/api/exercises(.*)",
   "/sign-in(.*)",
   "/sign-up(.*)",
+  // Modo invitado: rutinas guardadas solo en localStorage, sin cuenta.
+  "/invitado(.*)",
+  // Vista pública de solo lectura de rutinas de la comunidad.
+  "/comunidad(.*)",
+  "/api/community(.*)",
   // Autenticado con CRON_SECRET (header Authorization), no con sesión de Clerk.
   "/api/cron(.*)",
 ]);
