@@ -50,6 +50,11 @@
 .home-page .btn { border: none; cursor: pointer; font-size: 14px; font-weight: 700; border-radius: 10px; padding: 10px 20px; }
 .home-page .btn-primary { background: #22c55e; color: #08150d; }
 .home-page .btn-ghost { background: transparent; color: #f1f3f4; border: 1px solid #2a2f37; }
+.home-page .btn-glow { border-color: #4ade80; color: #4ade80; animation: sakatl-glow 1.8s ease-in-out infinite; }
+@keyframes sakatl-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.55); }
+  50% { box-shadow: 0 0 8px 3px rgba(74, 222, 128, 0.55); }
+}
 .home-page .input { background: #1c2026; border: 1px solid #2a2f37; border-radius: 10px; color: #f1f3f4; padding: 0 14px; font-size: 14px; }
 .home-page .input::placeholder { color: #6b7280; }
 .home-page .kicker { display: block; font-size: 13px; line-height: var(--half); letter-spacing: 0.08em; text-transform: uppercase; color: #9099a3; margin: 0 0 calc(var(--leading) - var(--half)); }

@@ -144,6 +144,12 @@ export function getGuestDaysRemaining(): number {
   return Math.max(0, Math.ceil(remainingMs / DAY_MS));
 }
 
+/** True si ya hay una sesión de invitado activa (no expirada) en este navegador. */
+export function hasGuestData(): boolean {
+  pruneIfExpired();
+  return getMeta() !== null;
+}
+
 function readRoutines(): GuestRoutine[] {
   pruneIfExpired();
   return readJSON<GuestRoutine[]>(ROUTINES_KEY, []);

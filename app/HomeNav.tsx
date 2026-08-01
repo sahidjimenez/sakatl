@@ -1,11 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { hasGuestData } from "@/lib/guest/storage";
 
 export default function HomeNav() {
   const [open, setOpen] = useState(false);
+  const [isGuest, setIsGuest] = useState(false);
   const close = () => setOpen(false);
+
+  useEffect(() => {
+    // localStorage solo existe en el cliente: se lee tras montar.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsGuest(hasGuestData());
+  }, []);
 
   return (
     <nav className="nav">
@@ -37,6 +45,13 @@ export default function HomeNav() {
         <Link href="/ejercicios" onClick={close}>
           Ejercicios
         </Link>
+        {isGuest && (
+          <Link href="/invitado" onClick={close}>
+            <button type="button" className="btn btn-ghost btn-glow">
+              Invitado
+            </button>
+          </Link>
+        )}
         <Link href="/sign-in" onClick={close}>
           <button type="button" className="btn btn-ghost">
             Entrar
