@@ -5,9 +5,11 @@ import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import {
   ApiError,
+  addExtraExerciseToSession,
   completeSession,
   createRoutine,
   deleteRoutine,
+  deleteSession,
   deleteSetLog,
   followRoutine,
   startSession,
@@ -118,6 +120,23 @@ export async function updateSessionNotesAction(sessionId: string, formData: Form
   const userId = await requireUser();
   const notes = String(formData.get("notes") ?? "");
   await updateSessionNotes(sessionId, userId, notes);
+  revalidatePath(`/app/sesiones/${sessionId}`);
+}
+
+export async function cancelSessionAction(sessionId: string, routineId: string) {
+  const userId = await requireUser();
+  await deleteSession(sessionId, userId);
+  revalidatePath(`/app/rutinas/${routineId}`);
+  redirect(`/app/rutinas/${routineId}`);
+}
+
+export async function addExtraExerciseAction(
+  sessionId: string,
+  exerciseId: string,
+  plannedSets: number,
+) {
+  const userId = await requireUser();
+  await addExtraExerciseToSession(sessionId, userId, exerciseId, plannedSets);
   revalidatePath(`/app/sesiones/${sessionId}`);
 }
 

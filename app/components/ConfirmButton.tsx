@@ -6,6 +6,7 @@ export function ConfirmButton({
   action,
   label,
   ariaLabel,
+  title,
   confirmLabel = "¿Seguro?",
   confirmActionLabel = "Sí, borrar",
   className,
@@ -13,6 +14,7 @@ export function ConfirmButton({
   action: () => Promise<void> | void;
   label: ReactNode;
   ariaLabel?: string;
+  title?: string;
   confirmLabel?: string;
   confirmActionLabel?: string;
   className?: string;
@@ -53,6 +55,7 @@ export function ConfirmButton({
       type="button"
       onClick={() => setConfirming(true)}
       aria-label={ariaLabel}
+      title={title}
       className={className}
     >
       {label}

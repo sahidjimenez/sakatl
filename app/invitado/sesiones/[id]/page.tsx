@@ -1,22 +1,31 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
+  addGuestExtraExercise,
   completeGuestSession,
+  deleteGuestSession,
   deleteGuestSetLog,
   getGuestRoutine,
   getGuestSession,
   updateGuestSessionNotes,
   upsertGuestSetLog,
+  type GuestBlock,
   type GuestRoutine,
   type GuestSession,
   type GuestSetLog,
 } from "@/lib/guest/storage";
 import { RestTimer } from "@/app/components/RestTimer";
 import { SetMarkButton } from "@/app/components/SetMarkButton";
-import { ConfirmButton } from "@/app/components/ConfirmButton";
+import { SessionTimer } from "@/app/components/SessionTimer";
+import { SessionNotesModal } from "@/app/components/SessionNotesModal";
+import { SessionInfoModal } from "@/app/components/SessionInfoModal";
+import { ManualRestButton } from "@/app/components/ManualRestButton";
+import { AddExerciseModal } from "@/app/components/AddExerciseModal";
+import { CancelSessionButton } from "@/app/components/CancelSessionButton";
+import { CollapsibleBlock } from "@/app/components/CollapsibleBlock";
 
 const BLOCK_LABELS: Record<string, string> = {
   single: "Ejercicio suelto",
@@ -26,6 +35,7 @@ const BLOCK_LABELS: Record<string, string> = {
 
 export default function InvitadoSesionPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const [session, setSession] = useState<GuestSession | null | undefined>(undefined);
   const [routine, setRoutine] = useState<GuestRoutine | null>(null);
   const [notes, setNotes] = useState("");
@@ -67,62 +77,125 @@ export default function InvitadoSesionPage() {
     refresh();
   }
 
+  function handleCancel() {
+    deleteGuestSession(session!.id);
+    router.push(`/invitado/rutinas/${routine!.id}`);
+  }
+
+  async function handleAddExtra(exerciseId: string, plannedSets: number) {
+    let exerciseName: string | null = null;
+    let exerciseImage: string | null = null;
+    try {
+      const res = await fetch(`/api/exercises/${exerciseId}`);
+      if (res.ok) {
+        const detail = await res.json();
+        exerciseName = detail.name ?? null;
+        exerciseImage = detail.image ?? null;
+      }
+    } catch {
+      // Sin conexión o error puntual: se agrega igual, mostrando el id como nombre.
+    }
+    addGuestExtraExercise(session!.id, { exerciseId, exerciseName, exerciseImage }, plannedSets);
+    refresh();
+  }
+
+  const combinedBlocks: Array<GuestBlock & { isExtra: boolean }> = [
+    ...routine.blocks.map((b) => ({ ...b, isExtra: false })),
+    ...(session.extraBlocks ?? []).map((b) => ({ ...b, isExtra: true })),
+  ];
+
+  let templateIdx = 0;
+  let extraIdx = 0;
+  const blocksWithMeta = combinedBlocks.map((block) => {
+    const label = block.isExtra
+      ? `Extra ${++extraIdx} · ${BLOCK_LABELS[block.type]}`
+      : `Bloque ${++templateIdx} · ${BLOCK_LABELS[block.type]}`;
+    const totalSets = block.exercises.reduce((sum, ex) => sum + ex.plannedSets, 0);
+    const completedSets = block.exercises.reduce((sum, ex) => {
+      let c = 0;
+      for (let s = 1; s <= ex.plannedSets; s++) {
+        if (logsByKey.get(`${ex.id}-${s}`)?.completed) c++;
+      }
+      return sum + c;
+    }, 0);
+    return { block, label, totalSets, completedSets };
+  });
+  const sessionTotalSets = blocksWithMeta.reduce((sum, b) => sum + b.totalSets, 0);
+  const sessionCompletedSets = blocksWithMeta.reduce((sum, b) => sum + b.completedSets, 0);
+
   return (
-    <div className="px-[clamp(20px,5vw,72px)] py-10">
+    <div className="px-[clamp(20px,5vw,72px)] py-6 md:py-10">
       <RestTimer />
-      <div className="mx-auto flex max-w-[720px] flex-col gap-8">
-        <div>
+      <div className="mx-auto flex max-w-[720px] flex-col gap-6 md:gap-8">
+        <div className="sticky top-0 z-30 -mx-[clamp(20px,5vw,72px)] border-b border-[#2a2f37] bg-[#0d0f12]/95 px-[clamp(20px,5vw,72px)] py-3 backdrop-blur md:static md:mx-0 md:border-0 md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-none">
           <Link
             href={`/invitado/rutinas/${routine.id}`}
-            className="mb-2 inline-block text-xs font-semibold text-[#9099a3] hover:text-[#f1f3f4]"
+            className="mb-1.5 inline-block text-xs font-semibold text-[#9099a3] hover:text-[#f1f3f4]"
           >
             ← {routine.name}
           </Link>
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <h1 className="text-3xl font-extrabold">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h1 className="text-2xl font-extrabold md:text-3xl">
               {session.completedAt ? "Sesión completada" : "Entrenando"}
             </h1>
+            <div className="flex items-center gap-2">
+              <SessionTimer startedAt={session.startedAt} endedAt={session.completedAt} />
+              {!session.completedAt && (
+                <button
+                  type="button"
+                  onClick={handleComplete}
+                  className="min-h-[44px] rounded-[10px] bg-[#22c55e] px-5 text-sm font-bold text-[#08150d]"
+                >
+                  Completar sesión
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <SessionInfoModal
+              routineName={routine.name}
+              startedAt={session.startedAt}
+              completedAt={session.completedAt}
+              completedSets={sessionCompletedSets}
+              totalSets={sessionTotalSets}
+            />
+            <SessionNotesModal hasNotes={Boolean(session.notes)}>
+              <form onSubmit={handleSaveNotes} className="flex flex-col gap-3">
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={4}
+                  placeholder="¿Cómo te sentiste? ¿Algún dolor o molestia?"
+                  autoFocus
+                  className="w-full resize-none rounded-[10px] border border-[#2a2f37] bg-[#0d0f12] px-3.5 py-3 text-sm text-[#f1f3f4] placeholder:text-[#6b7280] focus:outline-none focus:ring-1 focus:ring-[#4ade80]"
+                />
+                <button
+                  type="submit"
+                  className="min-h-[44px] self-start rounded-[10px] bg-[#22c55e] px-5 text-sm font-bold text-[#08150d]"
+                >
+                  Guardar nota
+                </button>
+              </form>
+            </SessionNotesModal>
             {!session.completedAt && (
-              <button
-                type="button"
-                onClick={handleComplete}
-                className="rounded-[10px] bg-[#22c55e] px-5 py-2.5 text-sm font-bold text-[#08150d]"
-              >
-                Completar sesión
-              </button>
+              <>
+                <ManualRestButton />
+                <AddExerciseModal onAdd={handleAddExtra} />
+                <CancelSessionButton action={handleCancel} />
+              </>
             )}
           </div>
-          <p className="mt-2 text-sm text-[#9099a3]">
-            Empezada el {new Date(session.startedAt).toLocaleString("es")}
-          </p>
-        </div>
-
-        <div className="rounded-2xl border border-[#2a2f37] bg-[#1c2026] p-5">
-          <p className="mb-3 text-sm font-bold text-[#f1f3f4]">Notas de la sesión</p>
-          <form onSubmit={handleSaveNotes} className="flex flex-col gap-3">
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-              placeholder="¿Cómo te sentiste? ¿Algún dolor o molestia?"
-              className="w-full resize-none rounded-[10px] border border-[#2a2f37] bg-[#0d0f12] px-3.5 py-3 text-sm text-[#f1f3f4] placeholder:text-[#6b7280] focus:outline-none focus:ring-1 focus:ring-[#4ade80]"
-            />
-            <button
-              type="submit"
-              className="self-start rounded-[10px] border border-[#2a2f37] px-4 py-2 text-sm font-bold text-[#f1f3f4] hover:border-[#4ade80]"
-            >
-              Guardar nota
-            </button>
-          </form>
         </div>
 
         <div className="flex flex-col gap-4">
-          {routine.blocks.map((block, i) => (
-            <div key={block.id} className="rounded-2xl border border-[#2a2f37] bg-[#1c2026] p-5">
-              <p className="mb-4 text-xs font-bold tracking-wide text-[#4ade80] uppercase">
-                Bloque {i + 1} · {BLOCK_LABELS[block.type]}
-              </p>
-              <div className="flex flex-col gap-5">
+          {blocksWithMeta.map(({ block, label, totalSets, completedSets }) => (
+            <CollapsibleBlock
+              key={block.id}
+              label={label}
+              progressLabel={`${completedSets}/${totalSets}`}
+              defaultOpen={completedSets < totalSets}
+            >
+              <>
                 {block.exercises.map((ex) => (
                   <div key={ex.id}>
                     <div className="mb-2 flex items-center gap-3">
@@ -162,8 +235,8 @@ export default function InvitadoSesionPage() {
                     </div>
                   </div>
                 ))}
-              </div>
-            </div>
+              </>
+            </CollapsibleBlock>
           ))}
         </div>
       </div>
@@ -207,38 +280,32 @@ function SetRow({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[#23272e] bg-[#0d0f12] p-3.5">
-      <form onSubmit={mark} className="flex flex-1 flex-wrap items-center gap-3">
-        <span className="w-14 shrink-0 text-sm font-semibold text-[#9099a3]">Set {setNumber}</span>
-        <input
-          type="number"
-          step="0.5"
-          min={0}
-          placeholder={targetWeight != null ? String(targetWeight) : "kg"}
-          value={weight}
-          onChange={(e) => setWeight(e.target.value)}
-          className="min-h-[48px] w-24 rounded-[10px] border border-[#2a2f37] bg-[#1c2026] px-3.5 text-base text-[#f1f3f4] placeholder:text-[#6b7280] focus:outline-none focus:ring-1 focus:ring-[#4ade80]"
-        />
-        <input
-          type="number"
-          min={0}
-          placeholder="reps"
-          value={reps}
-          onChange={(e) => setReps(e.target.value)}
-          className="min-h-[48px] w-24 rounded-[10px] border border-[#2a2f37] bg-[#1c2026] px-3.5 text-base text-[#f1f3f4] placeholder:text-[#6b7280] focus:outline-none focus:ring-1 focus:ring-[#4ade80]"
-        />
-        <SetMarkButton completed={Boolean(log?.completed)} />
-      </form>
-      {log?.completed && (
-        <ConfirmButton
-          action={remove}
-          label="✕"
-          ariaLabel="Borrar este registro"
-          confirmLabel=""
-          confirmActionLabel="Borrar"
-          className="flex min-h-[48px] items-center justify-center rounded-[10px] border border-[#2a2f37] px-3 text-sm text-[#9099a3] hover:border-red-500 hover:text-red-400"
-        />
-      )}
-    </div>
+    <form
+      onSubmit={mark}
+      className="flex flex-nowrap items-center gap-2 rounded-xl border border-[#23272e] bg-[#0d0f12] p-3 sm:gap-3 sm:p-3.5"
+    >
+      <span className="w-5 shrink-0 text-sm font-semibold text-[#9099a3] sm:w-14">
+        <span className="hidden sm:inline">Set </span>
+        {setNumber}
+      </span>
+      <input
+        type="number"
+        step="0.5"
+        min={0}
+        placeholder={targetWeight != null ? String(targetWeight) : "kg"}
+        value={weight}
+        onChange={(e) => setWeight(e.target.value)}
+        className="min-h-[48px] w-16 min-w-0 flex-1 rounded-[10px] border border-[#2a2f37] bg-[#1c2026] px-2.5 text-base text-[#f1f3f4] placeholder:text-[#6b7280] focus:outline-none focus:ring-1 focus:ring-[#4ade80] sm:w-24 sm:flex-none sm:px-3.5"
+      />
+      <input
+        type="number"
+        min={0}
+        placeholder="reps"
+        value={reps}
+        onChange={(e) => setReps(e.target.value)}
+        className="min-h-[48px] w-16 min-w-0 flex-1 rounded-[10px] border border-[#2a2f37] bg-[#1c2026] px-2.5 text-base text-[#f1f3f4] placeholder:text-[#6b7280] focus:outline-none focus:ring-1 focus:ring-[#4ade80] sm:w-24 sm:flex-none sm:px-3.5"
+      />
+      <SetMarkButton completed={Boolean(log?.completed)} onUndo={remove} />
+    </form>
   );
 }

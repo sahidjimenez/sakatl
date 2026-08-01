@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, ilike, inArray, isNotNull, lt, ne, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, inArray, isNotNull, isNull, lt, ne, or, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { getDb } from "./db";
 import {
@@ -245,8 +245,12 @@ export async function updateRoutine(routineId: string, ownerId: string, rawInput
     })
     .where(eq(routines.id, routineId));
 
-  // Reemplazo completo de bloques (más simple y correcto que diffear).
-  await db.delete(routineBlocks).where(eq(routineBlocks.routineId, routineId));
+  // Reemplazo completo de bloques (más simple y correcto que diffear). Sólo los
+  // de plantilla: los "extra" de sesiones puntuales (sessionId no null) se dejan
+  // intactos para no borrar el historial de sesiones ya entrenadas.
+  await db
+    .delete(routineBlocks)
+    .where(and(eq(routineBlocks.routineId, routineId), isNull(routineBlocks.sessionId)));
   await insertBlocks(routineId, input.blocks);
 
   return getRoutineDetail(routineId);
@@ -308,10 +312,12 @@ export async function getRoutineDetail(routineId: string) {
 
   if (!routine) return null;
 
+  // Excluye bloques "extra" agregados a media sesión (ver routineBlocks.sessionId):
+  // no son parte de la plantilla de la rutina.
   const blocks = await db
     .select()
     .from(routineBlocks)
-    .where(eq(routineBlocks.routineId, routineId))
+    .where(and(eq(routineBlocks.routineId, routineId), isNull(routineBlocks.sessionId)))
     .orderBy(routineBlocks.position);
 
   const blockIds = blocks.map((b) => b.id);
@@ -558,16 +564,113 @@ async function getSessionRow(sessionId: string) {
   return session ?? null;
 }
 
+async function getSessionExtraBlocks(sessionId: string) {
+  const db = getDb();
+  const blocks = await db
+    .select()
+    .from(routineBlocks)
+    .where(eq(routineBlocks.sessionId, sessionId))
+    .orderBy(routineBlocks.position);
+  if (blocks.length === 0) return [];
+
+  const blockIds = blocks.map((b) => b.id);
+  const blockExercises = await db
+    .select()
+    .from(routineBlockExercises)
+    .where(inArray(routineBlockExercises.blockId, blockIds))
+    .orderBy(routineBlockExercises.position);
+
+  const exercisesByBlock = new Map<string, ReturnType<typeof enrichBlockExercise>[]>();
+  for (const be of blockExercises) {
+    const list = exercisesByBlock.get(be.blockId) ?? [];
+    list.push(enrichBlockExercise(be));
+    exercisesByBlock.set(be.blockId, list);
+  }
+
+  return blocks.map((b) => ({
+    id: b.id,
+    position: b.position,
+    type: b.type,
+    exercises: exercisesByBlock.get(b.id) ?? [],
+    isExtra: true as const,
+  }));
+}
+
 export async function getSessionDetail(sessionId: string, userId: string) {
   const session = await getSessionRow(sessionId);
   if (!session) throw new ApiError(404, "Sesión no encontrada.");
   if (session.userId !== userId) throw new ApiError(403, "No es tu sesión.");
 
-  const routine = await getRoutineDetail(session.routineId);
+  const [routine, extraBlocks] = await Promise.all([
+    getRoutineDetail(session.routineId),
+    getSessionExtraBlocks(sessionId),
+  ]);
   const db = getDb();
   const logs = await db.select().from(setLogs).where(eq(setLogs.sessionId, sessionId));
 
-  return { ...session, routine, setLogs: logs };
+  const combinedRoutine = routine
+    ? {
+        ...routine,
+        blocks: [
+          ...routine.blocks.map((b) => ({ ...b, isExtra: false as const })),
+          ...extraBlocks,
+        ],
+      }
+    : null;
+
+  return { ...session, routine: combinedRoutine, setLogs: logs };
+}
+
+export async function addExtraExerciseToSession(
+  sessionId: string,
+  userId: string,
+  exerciseId: string,
+  plannedSets: number,
+) {
+  const session = await getSessionRow(sessionId);
+  if (!session) throw new ApiError(404, "Sesión no encontrada.");
+  if (session.userId !== userId) throw new ApiError(403, "No es tu sesión.");
+  if (session.completedAt) throw new ApiError(400, "La sesión ya está completada.");
+  if (!getExerciseById(exerciseId)) {
+    throw new ApiError(400, "'exerciseId' no existe en el catálogo.");
+  }
+  if (!Number.isInteger(plannedSets) || plannedSets < 1 || plannedSets > 20) {
+    throw new ApiError(400, "'plannedSets' debe ser un entero entre 1 y 20.");
+  }
+
+  const db = getDb();
+  const existingExtras = await db
+    .select({ id: routineBlocks.id })
+    .from(routineBlocks)
+    .where(eq(routineBlocks.sessionId, sessionId));
+
+  const [block] = await db
+    .insert(routineBlocks)
+    .values({
+      routineId: session.routineId,
+      sessionId,
+      position: existingExtras.length,
+      type: "single",
+    })
+    .returning({ id: routineBlocks.id });
+
+  await db.insert(routineBlockExercises).values({
+    blockId: block.id,
+    position: 0,
+    exerciseId,
+    plannedSets,
+    targetRepsMin: null,
+    targetRepsMax: null,
+    targetWeight: null,
+  });
+}
+
+export async function deleteSession(sessionId: string, userId: string) {
+  const session = await getSessionRow(sessionId);
+  if (!session) throw new ApiError(404, "Sesión no encontrada.");
+  if (session.userId !== userId) throw new ApiError(403, "No es tu sesión.");
+  const db = getDb();
+  await db.delete(workoutSessions).where(eq(workoutSessions.id, sessionId));
 }
 
 export async function completeSession(sessionId: string, userId: string) {

@@ -55,6 +55,14 @@ export const routineBlocks = pgTable("routine_blocks", {
   routineId: uuid("routine_id")
     .notNull()
     .references(() => routines.id, { onDelete: "cascade" }),
+  // Si no es null, este bloque es un ejercicio "extra" agregado sólo durante esa
+  // sesión puntual (botón "Agregar ejercicio" en Entrenando) y no forma parte de
+  // la plantilla de la rutina: se excluye de getRoutineDetail y se borra en
+  // cascada junto con la sesión.
+  sessionId: uuid("session_id").references(
+    (): AnyPgColumn => workoutSessions.id,
+    { onDelete: "cascade" },
+  ),
   position: integer("position").notNull(),
   type: blockTypeEnum("type").notNull(),
 });

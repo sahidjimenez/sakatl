@@ -47,6 +47,9 @@ export type GuestSession = {
   completedAt: string | null;
   notes: string | null;
   setLogs: GuestSetLog[];
+  // Ejercicios agregados sólo a esta sesión puntual (botón "Agregar ejercicio"),
+  // no forman parte de la plantilla de la rutina guardada.
+  extraBlocks?: GuestBlock[];
 };
 
 export type GuestRoutineInput = {
@@ -337,5 +340,43 @@ export function deleteGuestSetLog(sessionId: string, blockExerciseId: string, se
       (l) => !(l.blockExerciseId === blockExerciseId && l.setNumber === setNumber),
     ),
   };
+  writeSessions(sessions);
+}
+
+export function deleteGuestSession(id: string): void {
+  writeSessions(readSessions().filter((s) => s.id !== id));
+}
+
+/**
+ * Agrega un ejercicio "extra" sólo a esta sesión puntual: se guarda como un
+ * bloque más dentro de la sesión (no toca la rutina guardada en ROUTINES_KEY),
+ * para no alterar la plantilla para futuras sesiones.
+ */
+export function addGuestExtraExercise(
+  sessionId: string,
+  exercise: { exerciseId: string; exerciseName: string | null; exerciseImage: string | null },
+  plannedSets: number,
+): void {
+  const sessions = readSessions();
+  const idx = sessions.findIndex((s) => s.id === sessionId);
+  if (idx < 0) return;
+  const session = sessions[idx];
+  const extraBlock: GuestBlock = {
+    id: crypto.randomUUID(),
+    type: "single",
+    exercises: [
+      {
+        id: crypto.randomUUID(),
+        exerciseId: exercise.exerciseId,
+        exerciseName: exercise.exerciseName,
+        exerciseImage: exercise.exerciseImage,
+        plannedSets,
+        targetRepsMin: null,
+        targetRepsMax: null,
+        targetWeight: null,
+      },
+    ],
+  };
+  sessions[idx] = { ...session, extraBlocks: [...(session.extraBlocks ?? []), extraBlock] };
   writeSessions(sessions);
 }
