@@ -243,7 +243,7 @@ export function AsistenteChat() {
           e.preventDefault();
           handleSend(input);
         }}
-        className="sticky bottom-20 z-20 -mx-1 flex items-end gap-2 border-t border-[#2a2f37] bg-[#0d0f12]/95 px-1 pt-3 pb-3 backdrop-blur md:bottom-0"
+        className="sticky bottom-16 z-20 -mx-1 flex items-end gap-2 border-t border-[#2a2f37] bg-[#0d0f12]/95 px-1 pt-3 pb-3 backdrop-blur md:bottom-0"
       >
         <textarea
           ref={textareaRef}

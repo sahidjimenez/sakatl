@@ -36,7 +36,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </Link>
       </aside>
 
-      <div className="flex min-h-screen flex-1 flex-col pb-20 md:pb-0">{children}</div>
+      <div className="flex min-h-screen flex-1 flex-col pb-16 md:pb-0">{children}</div>
 
       <BottomTabs />
     </div>

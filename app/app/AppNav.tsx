@@ -108,7 +108,7 @@ export function SidebarNav() {
 export function BottomTabs() {
   const pathname = usePathname();
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-[#2a2f37] bg-[#0d0f12]/95 px-2 py-2 backdrop-blur md:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-40 flex h-16 items-center justify-around border-t border-[#2a2f37] bg-[#0d0f12]/95 px-2 backdrop-blur md:hidden">
       {NAV_ITEMS.map((item) => {
         const active = isActive(pathname, item.href);
         const Icon = item.icon;
