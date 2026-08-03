@@ -300,6 +300,14 @@ export function completeGuestSession(id: string): void {
   writeSessions(sessions);
 }
 
+export function reopenGuestSession(id: string): void {
+  const sessions = readSessions();
+  const idx = sessions.findIndex((s) => s.id === id);
+  if (idx < 0) return;
+  sessions[idx] = { ...sessions[idx], completedAt: null };
+  writeSessions(sessions);
+}
+
 export function updateGuestSessionNotes(id: string, notes: string): void {
   const sessions = readSessions();
   const idx = sessions.findIndex((s) => s.id === id);

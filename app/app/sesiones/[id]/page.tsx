@@ -8,6 +8,7 @@ import {
   completeSessionAction,
   deleteSetLogAction,
   logSetFormAction,
+  reopenSessionAction,
   updateSessionNotesAction,
 } from "@/lib/actions/routines";
 import { ExerciseThumb } from "@/app/components/ExerciseThumb";
@@ -73,7 +74,16 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
             </h1>
             <div className="flex items-center gap-2">
               <SessionTimer startedAt={session.startedAt} endedAt={session.completedAt} />
-              {!session.completedAt && (
+              {session.completedAt ? (
+                <form action={reopenSessionAction.bind(null, session.id)}>
+                  <button
+                    type="submit"
+                    className="min-h-[44px] rounded-[10px] border border-[#2a2f37] px-5 text-sm font-bold text-[#f1f3f4] hover:border-[#4ade80]"
+                  >
+                    Continuar entrenamiento
+                  </button>
+                </form>
+              ) : (
                 <form action={completeSessionAction.bind(null, session.id)}>
                   <button
                     type="submit"

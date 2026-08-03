@@ -12,6 +12,7 @@ import {
   deleteSession,
   deleteSetLog,
   followRoutine,
+  reopenSession,
   startSession,
   toggleRoutineLike,
   updateRoutine,
@@ -85,6 +86,13 @@ export async function startSessionAction(routineId: string) {
 export async function completeSessionAction(sessionId: string) {
   const userId = await requireUser();
   await completeSession(sessionId, userId);
+  revalidatePath(`/app/sesiones/${sessionId}`);
+  redirect(`/app/sesiones/${sessionId}`);
+}
+
+export async function reopenSessionAction(sessionId: string) {
+  const userId = await requireUser();
+  await reopenSession(sessionId, userId);
   revalidatePath(`/app/sesiones/${sessionId}`);
   redirect(`/app/sesiones/${sessionId}`);
 }

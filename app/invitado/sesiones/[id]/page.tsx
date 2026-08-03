@@ -10,6 +10,7 @@ import {
   deleteGuestSetLog,
   getGuestRoutine,
   getGuestSession,
+  reopenGuestSession,
   updateGuestSessionNotes,
   upsertGuestSetLog,
   type GuestBlock,
@@ -69,6 +70,11 @@ export default function InvitadoSesionPage() {
 
   function handleComplete() {
     completeGuestSession(session!.id);
+    refresh();
+  }
+
+  function handleReopen() {
+    reopenGuestSession(session!.id);
     refresh();
   }
 
@@ -141,7 +147,15 @@ export default function InvitadoSesionPage() {
             </h1>
             <div className="flex items-center gap-2">
               <SessionTimer startedAt={session.startedAt} endedAt={session.completedAt} />
-              {!session.completedAt && (
+              {session.completedAt ? (
+                <button
+                  type="button"
+                  onClick={handleReopen}
+                  className="min-h-[44px] rounded-[10px] border border-[#2a2f37] px-5 text-sm font-bold text-[#f1f3f4] hover:border-[#4ade80]"
+                >
+                  Continuar entrenamiento
+                </button>
+              ) : (
                 <button
                   type="button"
                   onClick={handleComplete}

@@ -687,6 +687,20 @@ export async function completeSession(sessionId: string, userId: string) {
   return updated;
 }
 
+export async function reopenSession(sessionId: string, userId: string) {
+  const session = await getSessionRow(sessionId);
+  if (!session) throw new ApiError(404, "Sesión no encontrada.");
+  if (session.userId !== userId) throw new ApiError(403, "No es tu sesión.");
+
+  const db = getDb();
+  const [updated] = await db
+    .update(workoutSessions)
+    .set({ completedAt: null })
+    .where(eq(workoutSessions.id, sessionId))
+    .returning();
+  return updated;
+}
+
 export type SetLogInput = {
   blockExerciseId: string;
   setNumber: number;
