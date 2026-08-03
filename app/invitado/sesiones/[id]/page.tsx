@@ -26,6 +26,7 @@ import { ManualRestButton } from "@/app/components/ManualRestButton";
 import { AddExerciseModal } from "@/app/components/AddExerciseModal";
 import { CancelSessionButton } from "@/app/components/CancelSessionButton";
 import { CollapsibleBlock } from "@/app/components/CollapsibleBlock";
+import { ExerciseThumb } from "@/app/components/ExerciseThumb";
 
 const BLOCK_LABELS: Record<string, string> = {
   single: "Ejercicio suelto",
@@ -200,11 +201,11 @@ export default function InvitadoSesionPage() {
                   <div key={ex.id}>
                     <div className="mb-2 flex items-center gap-3">
                       {ex.exerciseImage && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={`/exercises/${ex.exerciseImage}`}
-                          alt={ex.exerciseName ?? ""}
-                          className="h-10 w-10 rounded-lg object-cover"
+                        <ExerciseThumb
+                          exerciseId={ex.exerciseId}
+                          image={ex.exerciseImage}
+                          name={ex.exerciseName ?? ""}
+                          imgClassName="h-10 w-10 rounded-lg object-cover"
                         />
                       )}
                       <p className="text-sm font-semibold text-[#f1f3f4]">

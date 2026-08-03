@@ -7,6 +7,7 @@ import { DefaultChatTransport } from "ai";
 import type { AssistantUIMessage } from "@/lib/agents/assistant-agent";
 import { createRoutineAction, type FormActionResult } from "@/lib/actions/routines";
 import { ExerciseThumb } from "@/app/components/ExerciseThumb";
+import { VoiceRecordButton } from "@/app/components/VoiceRecordButton";
 
 const CHAT_HISTORY_KEY = "sakatl:assistant-chat-history";
 const MAX_HISTORY_MESSAGES = 20;
@@ -242,7 +243,7 @@ export function AsistenteChat() {
           e.preventDefault();
           handleSend(input);
         }}
-        className="flex items-end gap-2"
+        className="sticky bottom-20 z-20 -mx-1 flex items-end gap-2 border-t border-[#2a2f37] bg-[#0d0f12]/95 px-1 pt-3 pb-3 backdrop-blur md:bottom-0"
       >
         <textarea
           ref={textareaRef}
@@ -259,13 +260,19 @@ export function AsistenteChat() {
           placeholder="Ej: rutina de 3 días, piernas y espalda, con mancuernas (Shift+Enter para salto de línea)"
           className="max-h-40 flex-1 resize-none rounded-[10px] border border-[#2a2f37] bg-[#15181d] px-4 py-2.5 text-sm text-[#f1f3f4] outline-none focus:border-[#4ade80]"
         />
-        <button
-          type="submit"
-          disabled={status !== "ready"}
-          className="rounded-[10px] bg-[#22c55e] px-4 py-2.5 text-sm font-bold text-[#08150d] disabled:opacity-60"
-        >
-          Enviar
-        </button>
+        <div className="flex flex-col items-center gap-2">
+          <VoiceRecordButton
+            onTranscribed={(text) => setInput((prev) => (prev ? `${prev} ${text}` : text))}
+            disabled={status !== "ready"}
+          />
+          <button
+            type="submit"
+            disabled={status !== "ready"}
+            className="rounded-[10px] bg-[#22c55e] px-4 py-2.5 text-sm font-bold text-[#08150d] disabled:opacity-60"
+          >
+            Enviar
+          </button>
+        </div>
       </form>
     </div>
   );

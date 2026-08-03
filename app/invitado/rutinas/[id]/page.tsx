@@ -12,6 +12,7 @@ import {
   type GuestSession,
 } from "@/lib/guest/storage";
 import { ConfirmButton } from "@/app/components/ConfirmButton";
+import { ExerciseThumb } from "@/app/components/ExerciseThumb";
 
 const BLOCK_LABELS: Record<string, string> = {
   single: "Ejercicio suelto",
@@ -102,11 +103,11 @@ export default function InvitadoRutinaDetailPage() {
                     className="flex items-center gap-3 rounded-xl border border-[#23272e] bg-[#0d0f12] p-3"
                   >
                     {ex.exerciseImage && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={`/exercises/${ex.exerciseImage}`}
-                        alt={ex.exerciseName ?? ""}
-                        className="h-12 w-12 shrink-0 rounded-lg object-cover"
+                      <ExerciseThumb
+                        exerciseId={ex.exerciseId}
+                        image={ex.exerciseImage}
+                        name={ex.exerciseName ?? ""}
+                        imgClassName="h-12 w-12 rounded-lg object-cover"
                       />
                     )}
                     <div className="flex-1">

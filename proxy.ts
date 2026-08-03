@@ -11,6 +11,10 @@ const isPublicRoute = createRouteMatcher([
   // Vista pública de solo lectura de rutinas de la comunidad.
   "/comunidad(.*)",
   "/api/community(.*)",
+  // Asistente de IA para invitados (sin cuenta) y transcripción de audio,
+  // usada tanto por el chat de invitado como por el de usuarios logueados.
+  "/api/assistant-invitado(.*)",
+  "/api/transcribe(.*)",
   // Autenticado con CRON_SECRET (header Authorization), no con sesión de Clerk.
   "/api/cron(.*)",
 ]);
