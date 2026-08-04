@@ -2,6 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import HomeNav from "./HomeNav";
 import { CreateRoutineCTA } from "./CreateRoutineCTA";
+import { StatsRow } from "./components/home/StatsRow";
+import { DynamicAppMockup } from "./components/home/DynamicHomeSections";
+import { LayersIcon, CheckCircleIcon, UsersIcon, PlayCircleIcon } from "./components/home/FeatureIcons";
+import { getHomeStats } from "@/lib/home-stats";
 import "./home.css";
 
 export const metadata: Metadata = {
@@ -10,7 +14,9 @@ export const metadata: Metadata = {
     "Sakatl es donde armas tu rutina de ejercicio — series simples, bi-series o tri-series — y la sigues junto a otros, cada quien a su paso.",
 };
 
-export default function Home() {
+export default async function Home() {
+  const stats = await getHomeStats();
+
   return (
     <div className="home-page">
       <HomeNav />
@@ -37,30 +43,16 @@ export default function Home() {
         </section>
 
         <section className="frontpage" aria-label="Sakatl, en números">
-          <div className="index">
-            <p className="ix">
-              <span className="ix-label">Personas siguiendo rutinas hoy</span>
-              <span className="ix-num spot">312</span>
-            </p>
-            <p className="ix">
-              <span className="ix-label">Rutinas creadas por usuarios</span>
-              <span className="ix-num">1,204</span>
-            </p>
-            <p className="ix">
-              <span className="ix-label">Series registradas esta semana</span>
-              <span className="ix-num">8,940</span>
-            </p>
-            <p className="ix">
-              <span className="ix-label">Bloques por rutina, en promedio</span>
-              <span className="ix-num">4</span>
-            </p>
-          </div>
+          <StatsRow stats={stats} />
         </section>
 
         <section className="features" id="rutinas">
           <span className="kicker">Cómo funciona</span>
           <div className="cols">
             <div className="col">
+              <div className="col-icon">
+                <LayersIcon />
+              </div>
               <h2>Arma tu rutina, a tu manera</h2>
               <p>
                 Agrega ejercicios sueltos o agrúpalos en bi-series y
@@ -70,6 +62,9 @@ export default function Home() {
               </p>
             </div>
             <div className="col">
+              <div className="col-icon">
+                <CheckCircleIcon />
+              </div>
               <h2>Marca cada serie en el momento</h2>
               <p>
                 Durante la sesión, cada serie se marca con un check y anota
@@ -78,11 +73,58 @@ export default function Home() {
               </p>
             </div>
             <div className="col">
+              <div className="col-icon">
+                <UsersIcon />
+              </div>
               <h2>Cada quien a su paso, juntos</h2>
               <p>
                 Únete a la rutina de alguien más y síguela cuando te
                 convenga. Ves quién más la sigue y su constancia, sin
                 depender de coincidir en horario.
+              </p>
+            </div>
+            <div className="col">
+              <div className="col-icon">
+                <PlayCircleIcon />
+              </div>
+              <h2>Cada ejercicio, explicado</h2>
+              <p>
+                La biblioteca de ejercicios trae animación y pasos en
+                español para cada movimiento — útil si no conoces el nombre
+                o quieres confirmar la forma correcta antes de cargar peso.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="steps" aria-label="Cómo empezar">
+          <span className="kicker">Cómo empezar</span>
+          <div className="steps-list">
+            <div className="step">
+              <span className="step-num">1</span>
+              <h3>Pruébalo sin cuenta</h3>
+              <p>
+                El modo invitado guarda tu rutina en este navegador y te
+                deja pedirle una rutina a la IA una vez por semana, sin
+                registrarte.
+              </p>
+            </div>
+            <div className="step">
+              <span className="step-num">2</span>
+              <h3>Arma tu rutina, o pídesela al asistente</h3>
+              <p>
+                Elige tus ejercicios bloque por bloque, o describe tu
+                objetivo en el chat y te propone una rutina completa lista
+                para guardar.
+              </p>
+            </div>
+            <div className="step">
+              <span className="step-num">3</span>
+              <h3>Entrena y créate una cuenta cuando quieras</h3>
+              <p>
+                Marca tus series, revisa tu historial, y cuando quieras
+                conservar tu progreso y seguir rutinas de otros, crea tu
+                cuenta gratis.
               </p>
             </div>
           </div>
@@ -101,7 +143,7 @@ export default function Home() {
           </div>
           <figure className="split-figure">
             <div className="box">
-              <TrainingPhotoPlaceholder />
+              <DynamicAppMockup />
             </div>
           </figure>
         </section>
@@ -113,7 +155,7 @@ export default function Home() {
               entro, marco la serie, y sigo — mi grupo ve que ya la
               hice.&rdquo;
             </blockquote>
-            <figcaption>— Marco Ruiz, sigue Push Day</figcaption>
+            <figcaption>— La idea detrás de Sakatl</figcaption>
           </figure>
         </section>
 
@@ -134,35 +176,11 @@ export default function Home() {
           </div>
         </section>
 
-        <footer className="footer">Sakatl — rutinas que se hacen juntos.</footer>
+        <footer className="footer">
+          <p>Sakatl — rutinas que se hacen juntos.</p>
+          <p className="footer-credit">Creado por Sahid A. Jimenez Cazan</p>
+        </footer>
       </div>
-    </div>
-  );
-}
-
-function TrainingPhotoPlaceholder() {
-  return (
-    <div
-      role="img"
-      aria-label="Fotografía de alguien entrenando"
-      style={{
-        width: "100%",
-        height: "100%",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background:
-          "linear-gradient(135deg, #1c2026 0%, #14171b 60%, #0d0f12 100%)",
-      }}
-    >
-      <svg width="72" height="72" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path
-          d="M6.5 8.5v7M17.5 8.5v7M3 10.5v3M21 10.5v3M6.5 12h11"
-          stroke="#4ade80"
-          strokeWidth="1.6"
-          strokeLinecap="round"
-        />
-      </svg>
     </div>
   );
 }
