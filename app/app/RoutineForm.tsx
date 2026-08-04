@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { ExerciseSummary } from "@/lib/exercises";
 import { createRoutineAction, updateRoutineAction } from "@/lib/actions/routines";
 import type { BlockInput, RoutineInput } from "@/lib/routines";
+import { ExerciseThumb } from "@/app/components/ExerciseThumb";
 
 type BlockType = BlockInput["type"];
 
@@ -457,24 +458,28 @@ function ExercisePicker({ onSelect }: { onSelect: (ex: ExerciseSummary) => void 
             <p className="p-3 text-xs text-[#9099a3]">Sin resultados.</p>
           )}
           {results.map((ex) => (
-            <button
-              key={ex.id}
-              type="button"
-              onClick={() => {
-                onSelect(ex);
-                setOpen(false);
-                setQ("");
-              }}
-              className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-[#23272e]"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={`/exercises/${ex.image}`}
-                alt={ex.name}
-                className="h-8 w-8 rounded-md object-cover"
+            <div key={ex.id} className="flex w-full items-center gap-3 px-3 py-2 hover:bg-[#23272e]">
+              <ExerciseThumb
+                exerciseId={ex.id}
+                image={ex.image}
+                name={ex.name}
+                imgClassName="h-14 w-14 shrink-0 rounded-md object-cover"
               />
-              <span className="text-sm text-[#f1f3f4]">{ex.name}</span>
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onSelect(ex);
+                  setOpen(false);
+                  setQ("");
+                }}
+                className="flex-1 text-left"
+              >
+                <span className="block text-sm font-semibold text-[#f1f3f4]">{ex.name}</span>
+                <span className="block text-xs text-[#9099a3] capitalize">
+                  {ex.target} · {ex.equipment}
+                </span>
+              </button>
+            </div>
           ))}
         </div>
       )}

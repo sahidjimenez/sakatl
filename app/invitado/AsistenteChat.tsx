@@ -119,6 +119,34 @@ function RoutineProposalCard({ part }: { part: ProposeRoutineOutputPart }) {
   );
 }
 
+function ArrowUpIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M12 19V5" />
+      <path d="M5 12l7-7 7 7" />
+    </svg>
+  );
+}
+
+function ChatText({ text, isUser }: { text: string; isUser: boolean }) {
+  const lines = text.split("\n").filter((line) => line.trim() !== "");
+  return (
+    <div
+      className={
+        isUser
+          ? "rounded-2xl bg-[#22c55e] px-4 py-2 text-sm font-medium text-[#08150d]"
+          : "rounded-2xl border border-[#2a2f37] bg-[#1c2026] px-4 py-2 text-sm text-[#f1f3f4]"
+      }
+    >
+      {lines.map((line, i) => (
+        <p key={i} className={i < lines.length - 1 ? "mb-1.5" : undefined}>
+          {line}
+        </p>
+      ))}
+    </div>
+  );
+}
+
 function OptionsButtons({
   options,
   onSelect,
@@ -225,22 +253,14 @@ export function GuestAsistenteChat() {
         {messages.map((message) => (
           <div
             key={message.id}
-            className={message.role === "user" ? "ml-auto max-w-[85%]" : "mr-auto max-w-[85%]"}
+            className={
+              (message.role === "user" ? "ml-auto max-w-[85%]" : "mr-auto max-w-[85%]") +
+              " flex flex-col gap-2"
+            }
           >
             {message.parts.map((part, i) => {
               if (part.type === "text") {
-                return (
-                  <div
-                    key={i}
-                    className={
-                      message.role === "user"
-                        ? "rounded-2xl bg-[#22c55e] px-4 py-2 text-sm font-medium whitespace-pre-wrap text-[#08150d]"
-                        : "rounded-2xl border border-[#2a2f37] bg-[#1c2026] px-4 py-2 text-sm whitespace-pre-wrap text-[#f1f3f4]"
-                    }
-                  >
-                    {part.text}
-                  </div>
-                );
+                return <ChatText key={i} text={part.text} isUser={message.role === "user"} />;
               }
               if (part.type === "tool-searchExercises" && part.state !== "output-available") {
                 return (
@@ -281,39 +301,43 @@ export function GuestAsistenteChat() {
           e.preventDefault();
           handleSend(input);
         }}
-        className="sticky bottom-0 z-20 -mx-1 flex items-end gap-2 border-t border-[#2a2f37] bg-[#0d0f12]/95 px-1 pt-3 pb-3 backdrop-blur"
+        className="sticky bottom-0 z-20 -mx-1 border-t border-[#2a2f37] bg-[#0d0f12]/95 px-1 pt-3 pb-3 backdrop-blur"
       >
-        <textarea
-          ref={textareaRef}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleSend(input);
+        <div className="rounded-2xl border border-[#2a2f37] bg-[#15181d] px-3 pt-3 pb-2 focus-within:border-[#4ade80]">
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSend(input);
+              }
+            }}
+            disabled={status !== "ready" || locked}
+            rows={1}
+            placeholder={
+              locked
+                ? "Ya generaste tu rutina de esta semana"
+                : "Ej: rutina de 3 días, piernas y espalda, con mancuernas (Shift+Enter para salto de línea)"
             }
-          }}
-          disabled={status !== "ready" || locked}
-          rows={1}
-          placeholder={
-            locked
-              ? "Ya generaste tu rutina de esta semana"
-              : "Ej: rutina de 3 días, piernas y espalda, con mancuernas (Shift+Enter para salto de línea)"
-          }
-          className="max-h-40 flex-1 resize-none rounded-[10px] border border-[#2a2f37] bg-[#15181d] px-4 py-2.5 text-sm text-[#f1f3f4] outline-none focus:border-[#4ade80] disabled:opacity-60"
-        />
-        <div className="flex flex-col items-center gap-2">
-          <VoiceRecordButton
-            onTranscribed={(text) => setInput((prev) => (prev ? `${prev} ${text}` : text))}
-            disabled={status !== "ready" || locked}
+            className="max-h-40 w-full resize-none bg-transparent text-sm text-[#f1f3f4] outline-none placeholder:text-[#6b7280] disabled:opacity-60"
           />
-          <button
-            type="submit"
-            disabled={status !== "ready" || locked}
-            className="rounded-[10px] bg-[#22c55e] px-4 py-2.5 text-sm font-bold text-[#08150d] disabled:opacity-60"
-          >
-            Enviar
-          </button>
+          <div className="mt-1 flex items-center justify-end gap-1">
+            <VoiceRecordButton
+              variant="plain"
+              onTranscribed={(text) => setInput((prev) => (prev ? `${prev} ${text}` : text))}
+              disabled={status !== "ready" || locked}
+            />
+            <button
+              type="submit"
+              disabled={status !== "ready" || locked}
+              aria-label="Enviar"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-[#22c55e] text-[#08150d] transition-opacity disabled:opacity-40"
+            >
+              <ArrowUpIcon className="h-5 w-5" />
+            </button>
+          </div>
         </div>
       </form>
     </div>

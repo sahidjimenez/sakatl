@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import type { ExerciseSummary } from "@/lib/exercises";
 import { ICON_BUTTON_CLASS } from "@/app/components/IconModalButton";
+import { ExerciseThumb } from "@/app/components/ExerciseThumb";
 
 function PlusIcon({ className }: { className?: string }) {
   return (
@@ -118,20 +119,24 @@ export function AddExerciseModal({
                     <p className="p-3 text-xs text-[#9099a3]">Sin resultados.</p>
                   )}
                   {results.map((ex) => (
-                    <button
-                      key={ex.id}
-                      type="button"
-                      onClick={() => setSelected(ex)}
-                      className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-[#23272e]"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={`/exercises/${ex.image}`}
-                        alt={ex.name}
-                        className="h-10 w-10 rounded-md object-cover"
+                    <div key={ex.id} className="flex w-full items-center gap-3 px-3 py-2 hover:bg-[#23272e]">
+                      <ExerciseThumb
+                        exerciseId={ex.id}
+                        image={ex.image}
+                        name={ex.name}
+                        imgClassName="h-14 w-14 shrink-0 rounded-md object-cover"
                       />
-                      <span className="text-sm text-[#f1f3f4]">{ex.name}</span>
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelected(ex)}
+                        className="flex-1 text-left"
+                      >
+                        <span className="block text-sm font-semibold text-[#f1f3f4]">{ex.name}</span>
+                        <span className="block text-xs text-[#9099a3] capitalize">
+                          {ex.target} · {ex.equipment}
+                        </span>
+                      </button>
+                    </div>
                   ))}
                 </div>
               </>

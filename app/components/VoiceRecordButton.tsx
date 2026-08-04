@@ -34,9 +34,11 @@ function SpinnerIcon({ className }: { className?: string }) {
 export function VoiceRecordButton({
   onTranscribed,
   disabled,
+  variant = "boxed",
 }: {
   onTranscribed: (text: string) => void;
   disabled?: boolean;
+  variant?: "boxed" | "plain";
 }) {
   const [state, setState] = useState<RecordState>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -116,9 +118,13 @@ export function VoiceRecordButton({
         disabled={disabled || state === "transcribing"}
         aria-label={state === "recording" ? "Detener grabación" : "Grabar audio"}
         className={
-          state === "recording"
-            ? "flex h-[42px] w-[42px] items-center justify-center rounded-[10px] bg-red-500 text-white"
-            : "flex h-[42px] w-[42px] items-center justify-center rounded-[10px] border border-[#2a2f37] bg-[#15181d] text-[#9099a3] transition-colors hover:border-[#4ade80] hover:text-[#4ade80] disabled:opacity-60"
+          variant === "plain"
+            ? state === "recording"
+              ? "flex h-9 w-9 items-center justify-center rounded-full bg-red-500 text-white"
+              : "flex h-9 w-9 items-center justify-center rounded-full text-[#9099a3] transition-colors hover:text-[#4ade80] disabled:opacity-60"
+            : state === "recording"
+              ? "flex h-[42px] w-[42px] items-center justify-center rounded-[10px] bg-red-500 text-white"
+              : "flex h-[42px] w-[42px] items-center justify-center rounded-[10px] border border-[#2a2f37] bg-[#15181d] text-[#9099a3] transition-colors hover:border-[#4ade80] hover:text-[#4ade80] disabled:opacity-60"
         }
       >
         {state === "transcribing" ? (
