@@ -16,48 +16,49 @@ export default function HomeNav() {
   }, []);
 
   return (
-    <nav className="nav">
-      <span className="nav-brand">Sakatl</span>
+    <>
+      <nav className="nav">
+        <span className="nav-brand">Sakatl</span>
 
-      <button
-        type="button"
-        className={`nav-toggle ${open ? "nav-toggle-open" : ""}`}
-        aria-expanded={open}
-        aria-controls="nav-links"
-        aria-label={open ? "Cerrar menú" : "Abrir menú"}
-        onClick={() => setOpen((v) => !v)}
-      >
-        <span />
-        <span />
-        <span />
-      </button>
+        <div className="nav-links">
+          <a href="#rutinas" aria-current="location">Rutinas</a>
+          <a href="#comunidad">Comunidad</a>
+          <a href="#registro">Registro</a>
+          <Link href="/ejercicios">Ejercicios</Link>
+        </div>
 
-      <div id="nav-links" className={`nav-links ${open ? "nav-links-open" : ""}`}>
-        <a href="#rutinas" aria-current="location" onClick={close}>
-          Rutinas
-        </a>
-        <a href="#comunidad" onClick={close}>
-          Comunidad
-        </a>
-        <a href="#registro" onClick={close}>
-          Registro
-        </a>
-        <Link href="/ejercicios" onClick={close}>
-          Ejercicios
-        </Link>
-        {isGuest && (
-          <Link href="/invitado" onClick={close}>
-            <button type="button" className="btn btn-ghost btn-glow">
-              Invitado
-            </button>
+        <div className="nav-actions">
+          <Link href="/invitado" className={`pill-guest ${isGuest ? "pill-glow" : ""}`}>
+            Invitado
           </Link>
-        )}
+          <Link href="/sign-in">
+            <button type="button" className="btn btn-enter">Entrar</button>
+          </Link>
+        </div>
+
+        <button
+          type="button"
+          className={`nav-toggle ${open ? "nav-toggle-open" : ""}`}
+          aria-expanded={open}
+          aria-controls="mobile-menu"
+          aria-label={open ? "Cerrar menú" : "Abrir menú"}
+          onClick={() => setOpen((v) => !v)}
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+      </nav>
+
+      <div id="mobile-menu" className={`mobile-menu ${open ? "mobile-menu-open" : ""}`}>
+        <a href="#rutinas" aria-current="location" onClick={close}>Rutinas</a>
+        <a href="#comunidad" onClick={close}>Comunidad</a>
+        <a href="#registro" onClick={close}>Registro</a>
+        <Link href="/ejercicios" onClick={close}>Ejercicios</Link>
         <Link href="/sign-in" onClick={close}>
-          <button type="button" className="btn btn-ghost">
-            Entrar
-          </button>
+          <button type="button" className="btn btn-enter">Entrar</button>
         </Link>
       </div>
-    </nav>
+    </>
   );
 }
