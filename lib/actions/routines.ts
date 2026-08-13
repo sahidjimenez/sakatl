@@ -104,11 +104,38 @@ export async function startSessionAction(routineId: string) {
   redirect(`/app/sesiones/${session.id}`);
 }
 
+export async function startSessionForCountdownAction(
+  routineId: string,
+): Promise<FormActionResult> {
+  const userId = await requireUser();
+  try {
+    const session = await startSession(routineId, userId);
+    return { ok: true, id: session!.id };
+  } catch (err) {
+    if (err instanceof ApiError) return { error: err.message };
+    throw err;
+  }
+}
+
 export async function completeSessionAction(sessionId: string) {
   const userId = await requireUser();
   await completeSession(sessionId, userId);
   revalidatePath(`/app/sesiones/${sessionId}`);
   redirect(`/app/sesiones/${sessionId}`);
+}
+
+export async function completeSessionForCelebrationAction(
+  sessionId: string,
+): Promise<{ error: string } | { ok: true }> {
+  const userId = await requireUser();
+  try {
+    await completeSession(sessionId, userId);
+    revalidatePath(`/app/sesiones/${sessionId}`);
+    return { ok: true };
+  } catch (err) {
+    if (err instanceof ApiError) return { error: err.message };
+    throw err;
+  }
 }
 
 export async function reopenSessionAction(sessionId: string) {

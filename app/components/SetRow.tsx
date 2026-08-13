@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { startRestTimer } from "@/app/components/RestTimer";
 import { SetMarkButton } from "@/app/components/SetMarkButton";
+import { useSessionCompletion } from "@/app/components/SessionCompletion";
 
 function PencilIcon({ className }: { className?: string }) {
   return (
@@ -52,7 +53,13 @@ export function SetRow({
     reps == null &&
     (prevWeight != null || prevReps != null);
 
-  const [manualMode, setManualMode] = useState(!canQuickCopy);
+  // manualOverride solo se activa cuando el usuario pide llenar a mano; el
+  // modo por defecto se deriva de canQuickCopy en cada render (no se "congela"
+  // en el montaje), porque esta fila no se remonta entre revalidaciones del
+  // servidor y prevCompleted puede cambiar después de montada.
+  const [manualOverride, setManualOverride] = useState(false);
+  const manualMode = manualOverride || !canQuickCopy;
+
   const [optimisticDone, setOptimisticDone] = useState(false);
   const [optimisticValues, setOptimisticValues] = useState<{
     weight: number | null;
@@ -60,9 +67,34 @@ export function SetRow({
   } | null>(null);
   const [, startTransition] = useTransition();
 
+  const weightRef = useRef<HTMLInputElement>(null);
+  const repsRef = useRef<HTMLInputElement>(null);
+  const completion = useSessionCompletion();
+  const key = `${blockExerciseId}-${setNumber}`;
+
   const isDone = completed || optimisticDone;
   const displayWeight = optimisticValues?.weight ?? weight;
   const displayReps = optimisticValues?.reps ?? reps;
+
+  async function handleUndo() {
+    await onUndo();
+    completion?.markSetUndone(key);
+    setOptimisticDone(false);
+    setOptimisticValues(null);
+  }
+
+  function submitSet(overrideWeight?: number | null, overrideReps?: number | null) {
+    startTransition(async () => {
+      const formData = new FormData();
+      formData.set("blockExerciseId", blockExerciseId);
+      formData.set("setNumber", String(setNumber));
+      const weightVal = overrideWeight !== undefined ? overrideWeight : weightRef.current?.value;
+      const repsVal = overrideReps !== undefined ? overrideReps : repsRef.current?.value;
+      if (weightVal != null && weightVal !== "") formData.set("weight", String(weightVal));
+      if (repsVal != null && repsVal !== "") formData.set("reps", String(repsVal));
+      await logSetAction(formData);
+    });
+  }
 
   if (!manualMode && !isDone) {
     return (
@@ -77,14 +109,8 @@ export function SetRow({
             startRestTimer();
             setOptimisticValues({ weight: prevWeight, reps: prevReps });
             setOptimisticDone(true);
-            startTransition(async () => {
-              const formData = new FormData();
-              formData.set("blockExerciseId", blockExerciseId);
-              formData.set("setNumber", String(setNumber));
-              if (prevWeight != null) formData.set("weight", String(prevWeight));
-              if (prevReps != null) formData.set("reps", String(prevReps));
-              await logSetAction(formData);
-            });
+            completion?.markSetDone(key);
+            submitSet(prevWeight, prevReps);
           }}
           className="min-h-[44px] flex-1 rounded-[10px] border border-dashed border-[#2a2f37] bg-[#1c2026] text-sm font-bold text-[#9099a3] transition-colors duration-75 hover:border-[#4ade80] hover:text-[#4ade80]"
         >
@@ -93,7 +119,7 @@ export function SetRow({
         </button>
         <button
           type="button"
-          onClick={() => setManualMode(true)}
+          onClick={() => setManualOverride(true)}
           aria-label="Llenar manualmente"
           title="Llenar manualmente"
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] border border-[#2a2f37] text-[#9099a3] hover:border-[#4ade80] hover:text-[#4ade80]"
@@ -105,17 +131,13 @@ export function SetRow({
   }
 
   return (
-    <form
-      action={logSetAction}
-      className="flex flex-nowrap items-center gap-2 rounded-xl border border-[#23272e] bg-[#0d0f12] p-3 sm:gap-3 sm:p-3.5"
-    >
-      <input type="hidden" name="blockExerciseId" value={blockExerciseId} />
-      <input type="hidden" name="setNumber" value={setNumber} />
+    <div className="flex flex-nowrap items-center gap-2 rounded-xl border border-[#23272e] bg-[#0d0f12] p-3 sm:gap-3 sm:p-3.5">
       <span className="w-5 shrink-0 text-sm font-semibold text-[#9099a3] sm:w-14">
         <span className="hidden sm:inline">Set </span>
         {setNumber}
       </span>
       <input
+        ref={weightRef}
         type="number"
         name="weight"
         step="0.5"
@@ -125,6 +147,7 @@ export function SetRow({
         className="min-h-[48px] w-16 min-w-0 flex-1 rounded-[10px] border border-[#2a2f37] bg-[#1c2026] px-2.5 text-base text-[#f1f3f4] placeholder:text-[#6b7280] focus:outline-none focus:ring-1 focus:ring-[#4ade80] sm:w-24 sm:flex-none sm:px-3.5"
       />
       <input
+        ref={repsRef}
         type="number"
         name="reps"
         min={0}
@@ -134,9 +157,13 @@ export function SetRow({
       />
       <SetMarkButton
         completed={isDone}
-        onMark={() => setOptimisticDone(true)}
-        onUndo={onUndo}
+        onMark={() => {
+          setOptimisticDone(true);
+          completion?.markSetDone(key);
+          submitSet();
+        }}
+        onUndo={handleUndo}
       />
-    </form>
+    </div>
   );
 }

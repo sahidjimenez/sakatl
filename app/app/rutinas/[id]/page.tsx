@@ -2,10 +2,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { getRoutineDetail, getRoutineLikeInfo, listRoutineSessions } from "@/lib/routines";
-import { deleteRoutineAction, followRoutineAction, startSessionAction } from "@/lib/actions/routines";
+import {
+  deleteRoutineAction,
+  followRoutineAction,
+  startSessionForCountdownAction,
+} from "@/lib/actions/routines";
 import { ExerciseThumb } from "@/app/components/ExerciseThumb";
 import { LikeButton } from "@/app/components/LikeButton";
 import { ConfirmButton } from "@/app/components/ConfirmButton";
+import { StartSessionButton } from "@/app/components/StartSessionButton";
 
 const BLOCK_LABELS: Record<string, string> = {
   single: "Ejercicio suelto",
@@ -67,14 +72,12 @@ export default async function RoutineDetailPage({
             <div className="flex flex-wrap gap-3">
               {isOwner ? (
                 <>
-                  <form action={startSessionAction.bind(null, routine.id)}>
-                    <button
-                      type="submit"
-                      className="rounded-[10px] bg-[#22c55e] px-5 py-2.5 text-sm font-bold text-[#08150d]"
-                    >
-                      Empezar entrenamiento
-                    </button>
-                  </form>
+                  <StartSessionButton
+                    routineId={routine.id}
+                    routineName={routine.name}
+                    action={startSessionForCountdownAction}
+                    className="rounded-[10px] bg-[#22c55e] px-5 py-2.5 text-sm font-bold text-[#08150d]"
+                  />
                   <Link
                     href={`/app/rutinas/${routine.id}/editar`}
                     className="rounded-[10px] border border-[#2a2f37] px-5 py-2.5 text-sm font-bold text-[#f1f3f4] hover:border-[#4ade80]"

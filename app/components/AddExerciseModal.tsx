@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { createPortal } from "react-dom";
 import type { ExerciseSummary } from "@/lib/exercises";
 import { ICON_BUTTON_CLASS } from "@/app/components/IconModalButton";
 import { ExerciseThumb } from "@/app/components/ExerciseThumb";
+import { Modal } from "@/app/components/Modal";
 
 function PlusIcon({ className }: { className?: string }) {
   return (
@@ -80,19 +80,7 @@ export function AddExerciseModal({
         <PlusIcon className="h-5 w-5" />
       </button>
 
-      {open &&
-        createPortal(
-          // Se porta a document.body por la misma razón que en IconModalButton:
-          // el header de la sesión usa backdrop-blur en mobile, que atraparía
-          // este "fixed" dentro del header en vez de cubrir toda la pantalla.
-          <div
-            className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 sm:items-center sm:p-4"
-            onClick={close}
-          >
-          <div
-            className="w-full max-w-lg rounded-t-2xl border border-[#2a2f37] bg-[#1c2026] p-5 sm:rounded-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <Modal open={open} onClose={close}>
             <div className="mb-3 flex items-center justify-between">
               <p className="text-sm font-bold text-[#f1f3f4]">Agregar ejercicio a esta sesión</p>
               <button
@@ -186,10 +174,7 @@ export function AddExerciseModal({
                 </button>
               </div>
             )}
-          </div>
-        </div>,
-          document.body,
-        )}
+      </Modal>
     </>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { startRestTimer } from "@/app/components/RestTimer";
+import { Modal } from "@/app/components/Modal";
 
 function CheckIcon({ className }: { className?: string }) {
   return (
@@ -34,7 +35,7 @@ export function SetMarkButton({
   if (!completed) {
     return (
       <button
-        type="submit"
+        type="button"
         onClick={() => {
           startRestTimer();
           onMark?.();
@@ -60,42 +61,36 @@ export function SetMarkButton({
         <CheckIcon className="h-5 w-5" />
       </button>
 
-      {confirming && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
-          onClick={() => !isPending && setConfirming(false)}
-        >
-          <div
-            className="w-full max-w-xs rounded-2xl border border-[#2a2f37] bg-[#1c2026] p-5 text-center"
-            onClick={(e) => e.stopPropagation()}
+      <Modal
+        open={confirming}
+        onClose={() => !isPending && setConfirming(false)}
+        variant="dialog"
+      >
+        <p className="mb-4 text-sm font-semibold text-[#f1f3f4]">¿Deshacer este set?</p>
+        <div className="flex items-center justify-center gap-3">
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={() => setConfirming(false)}
+            className="min-h-[44px] flex-1 rounded-[10px] border border-[#2a2f37] text-sm font-bold text-[#9099a3] hover:text-[#f1f3f4] disabled:opacity-60"
           >
-            <p className="mb-4 text-sm font-semibold text-[#f1f3f4]">¿Deshacer este set?</p>
-            <div className="flex items-center justify-center gap-3">
-              <button
-                type="button"
-                disabled={isPending}
-                onClick={() => setConfirming(false)}
-                className="min-h-[44px] flex-1 rounded-[10px] border border-[#2a2f37] text-sm font-bold text-[#9099a3] hover:text-[#f1f3f4] disabled:opacity-60"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                disabled={isPending}
-                onClick={() =>
-                  startTransition(async () => {
-                    await onUndo();
-                    setConfirming(false);
-                  })
-                }
-                className="min-h-[44px] flex-1 rounded-[10px] bg-red-500 text-sm font-bold text-white disabled:opacity-60"
-              >
-                {isPending ? "…" : "Sí"}
-              </button>
-            </div>
-          </div>
+            Cancelar
+          </button>
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={() =>
+              startTransition(async () => {
+                await onUndo();
+                setConfirming(false);
+              })
+            }
+            className="min-h-[44px] flex-1 rounded-[10px] bg-red-500 text-sm font-bold text-white disabled:opacity-60"
+          >
+            {isPending ? "…" : "Sí"}
+          </button>
         </div>
-      )}
+      </Modal>
     </>
   );
 }

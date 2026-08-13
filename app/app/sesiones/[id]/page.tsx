@@ -5,7 +5,7 @@ import { getSessionDetail } from "@/lib/routines";
 import {
   addExtraExerciseAction,
   cancelSessionAction,
-  completeSessionAction,
+  completeSessionForCelebrationAction,
   deleteSetLogAction,
   logSetFormAction,
   reopenSessionAction,
@@ -21,6 +21,8 @@ import { ManualRestButton } from "@/app/components/ManualRestButton";
 import { AddExerciseModal } from "@/app/components/AddExerciseModal";
 import { CancelSessionButton } from "@/app/components/CancelSessionButton";
 import { CollapsibleBlock } from "@/app/components/CollapsibleBlock";
+import { CompleteSessionButton } from "@/app/components/CompleteSessionButton";
+import { SessionCompletionProvider } from "@/app/components/SessionCompletion";
 
 const BLOCK_LABELS: Record<string, string> = {
   single: "Ejercicio suelto",
@@ -56,10 +58,21 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
   });
   const sessionTotalSets = blocksWithMeta.reduce((sum, b) => sum + b.totalSets, 0);
   const sessionCompletedSets = blocksWithMeta.reduce((sum, b) => sum + b.completedSets, 0);
+  const initialDoneKeys = Array.from(logsByKey.entries())
+    .filter(([, log]) => log.completed)
+    .map(([key]) => key);
 
   return (
     <div className="flex-1 px-[clamp(20px,5vw,72px)] py-6 md:py-10">
       <RestTimer />
+      <SessionCompletionProvider
+        sessionId={session.id}
+        routineName={session.routine.name}
+        totalSets={sessionTotalSets}
+        initialDoneKeys={initialDoneKeys}
+        alreadyCompleted={Boolean(session.completedAt)}
+        action={completeSessionForCelebrationAction}
+      >
       <div className="mx-auto flex max-w-[720px] flex-col gap-6 md:gap-8">
         <div className="sticky top-0 z-30 -mx-[clamp(20px,5vw,72px)] border-b border-[#2a2f37] bg-[#0d0f12]/95 px-[clamp(20px,5vw,72px)] py-3 backdrop-blur md:static md:mx-0 md:border-0 md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-none">
           <Link
@@ -84,14 +97,7 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
                   </button>
                 </form>
               ) : (
-                <form action={completeSessionAction.bind(null, session.id)}>
-                  <button
-                    type="submit"
-                    className="min-h-[44px] rounded-[10px] bg-[#22c55e] px-5 text-sm font-bold text-[#08150d]"
-                  >
-                    Completar sesión
-                  </button>
-                </form>
+                <CompleteSessionButton className="min-h-[44px] rounded-[10px] bg-[#22c55e] px-5 text-sm font-bold text-[#08150d]" />
               )}
             </div>
           </div>
@@ -196,6 +202,7 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
           ))}
         </div>
       </div>
+      </SessionCompletionProvider>
     </div>
   );
 }
