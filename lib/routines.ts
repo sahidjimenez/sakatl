@@ -264,6 +264,97 @@ export async function deleteRoutine(routineId: string, ownerId: string) {
   await db.delete(routines).where(eq(routines.id, routineId));
 }
 
+export type RoutineScheduleCard = {
+  id: string;
+  name: string;
+  scheduledDays: number[];
+  exerciseThumbnails: string[];
+};
+
+// Lista liviana (sin sets/reps ni historial) para la vista de calendario semanal,
+// con las miniaturas de ejercicios para reconocer cada rutina de un vistazo.
+export async function listMyRoutinesSchedule(ownerId: string): Promise<RoutineScheduleCard[]> {
+  const db = getDb();
+  const rows = await db
+    .select({ id: routines.id, name: routines.name, scheduledDays: routines.scheduledDays })
+    .from(routines)
+    .where(eq(routines.ownerId, ownerId))
+    .orderBy(desc(routines.updatedAt));
+
+  if (rows.length === 0) return [];
+  const routineIds = rows.map((r) => r.id);
+
+  const blocks = await db
+    .select({ id: routineBlocks.id, routineId: routineBlocks.routineId })
+    .from(routineBlocks)
+    .where(inArray(routineBlocks.routineId, routineIds));
+
+  const blockIdsByRoutine = new Map<string, string[]>();
+  for (const b of blocks) {
+    const list = blockIdsByRoutine.get(b.routineId) ?? [];
+    list.push(b.id);
+    blockIdsByRoutine.set(b.routineId, list);
+  }
+
+  const allBlockIds = blocks.map((b) => b.id);
+  const blockExercises = allBlockIds.length
+    ? await db
+        .select({ blockId: routineBlockExercises.blockId, exerciseId: routineBlockExercises.exerciseId })
+        .from(routineBlockExercises)
+        .where(inArray(routineBlockExercises.blockId, allBlockIds))
+        .orderBy(routineBlockExercises.position)
+    : [];
+
+  const exercisesByBlock = new Map<string, string[]>();
+  for (const be of blockExercises) {
+    const list = exercisesByBlock.get(be.blockId) ?? [];
+    list.push(be.exerciseId);
+    exercisesByBlock.set(be.blockId, list);
+  }
+
+  return rows.map((r) => {
+    const blockIds = blockIdsByRoutine.get(r.id) ?? [];
+    const exerciseIds: string[] = [];
+    outer: for (const bid of blockIds) {
+      for (const exId of exercisesByBlock.get(bid) ?? []) {
+        if (!exerciseIds.includes(exId)) exerciseIds.push(exId);
+        if (exerciseIds.length >= 4) break outer;
+      }
+    }
+    const exerciseThumbnails = exerciseIds
+      .map((exId) => getExerciseById(exId)?.image)
+      .filter((img): img is string => Boolean(img));
+
+    return { ...r, exerciseThumbnails };
+  });
+}
+
+// Actualiza solo el día agendado de una rutina (agregar/quitar), sin tocar
+// nombre/descripción/bloques — mucho más liviano que updateRoutine() para el
+// drag-and-drop del calendario.
+export async function updateRoutineSchedule(
+  routineId: string,
+  ownerId: string,
+  scheduledDays: number[],
+) {
+  const routine = await getRoutineRow(routineId);
+  if (!routine) throw new ApiError(404, "Rutina no encontrada.");
+  if (routine.ownerId !== ownerId) throw new ApiError(403, "No eres dueño de esta rutina.");
+
+  const cleaned = [...new Set(scheduledDays.map((d) => Number(d)))];
+  if (cleaned.some((d) => !Number.isInteger(d) || d < 1 || d > 7)) {
+    throw new ApiError(400, "'scheduledDays' debe contener valores entre 1 (lunes) y 7 (domingo).");
+  }
+
+  const db = getDb();
+  await db
+    .update(routines)
+    .set({ scheduledDays: cleaned, updatedAt: new Date() })
+    .where(eq(routines.id, routineId));
+
+  return cleaned;
+}
+
 async function getRoutineRow(routineId: string) {
   const db = getDb();
   const [routine] = await db.select().from(routines).where(eq(routines.id, routineId)).limit(1);

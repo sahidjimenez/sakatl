@@ -16,6 +16,7 @@ import {
   startSession,
   toggleRoutineLike,
   updateRoutine,
+  updateRoutineSchedule,
   updateSessionNotes,
   updateWeeklyGoal,
   upsertSetLog,
@@ -48,6 +49,26 @@ export async function updateRoutineAction(
     revalidatePath("/app/rutinas");
     revalidatePath(`/app/rutinas/${routineId}`);
     return { ok: true, id: routine!.id };
+  } catch (err) {
+    if (err instanceof ApiError) return { error: err.message };
+    throw err;
+  }
+}
+
+export type ScheduleActionResult = { error: string } | { ok: true; scheduledDays: number[] };
+
+export async function updateRoutineScheduleAction(
+  routineId: string,
+  scheduledDays: number[],
+): Promise<ScheduleActionResult> {
+  const userId = await requireUser();
+  try {
+    const cleaned = await updateRoutineSchedule(routineId, userId, scheduledDays);
+    revalidatePath("/app");
+    revalidatePath("/app/rutinas");
+    revalidatePath("/app/rutinas/calendario");
+    revalidatePath(`/app/rutinas/${routineId}`);
+    return { ok: true, scheduledDays: cleaned };
   } catch (err) {
     if (err instanceof ApiError) return { error: err.message };
     throw err;

@@ -8,6 +8,23 @@ export const metadata: Metadata = {
   title: "Mis rutinas — Sakatl",
 };
 
+function CalendarIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <rect x="4" y="5" width="16" height="15" rx="2" />
+      <path d="M4 10h16M8 3v4M16 3v4" />
+    </svg>
+  );
+}
+
 export default async function RutinasPage() {
   const userId = await requireUser();
   const myRoutines = await listMyRoutines(userId);
@@ -17,12 +34,22 @@ export default async function RutinasPage() {
       <div className="mx-auto flex max-w-[1100px] flex-col gap-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <h1 className="text-3xl font-extrabold">Mis rutinas</h1>
-          <Link
-            href="/app/nueva"
-            className="rounded-[10px] bg-[#22c55e] px-5 py-2.5 text-sm font-bold text-[#08150d]"
-          >
-            + Nueva rutina
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/app/rutinas/calendario"
+              aria-label="Ver calendario de rutinas"
+              className="flex items-center gap-2 rounded-[10px] border border-[#2a2f37] bg-[#1c2026] px-4 py-2.5 text-sm font-bold text-[#f1f3f4] hover:border-[#4ade80]"
+            >
+              <CalendarIcon className="h-4 w-4" />
+              Calendario
+            </Link>
+            <Link
+              href="/app/nueva"
+              className="rounded-[10px] bg-[#22c55e] px-5 py-2.5 text-sm font-bold text-[#08150d]"
+            >
+              + Nueva rutina
+            </Link>
+          </div>
         </div>
 
         {myRoutines.length === 0 ? (
