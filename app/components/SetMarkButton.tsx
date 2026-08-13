@@ -22,9 +22,11 @@ function CheckIcon({ className }: { className?: string }) {
 export function SetMarkButton({
   completed,
   onUndo,
+  onMark,
 }: {
   completed: boolean;
   onUndo: () => Promise<void> | void;
+  onMark?: () => void;
 }) {
   const [confirming, setConfirming] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -33,10 +35,13 @@ export function SetMarkButton({
     return (
       <button
         type="submit"
-        onClick={() => startRestTimer()}
+        onClick={() => {
+          startRestTimer();
+          onMark?.();
+        }}
         aria-label="Marcar set como hecho"
         title="Marcar"
-        className="ml-auto flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] border border-[#2a2f37] text-[#9099a3] hover:border-[#4ade80] hover:text-[#4ade80]"
+        className="ml-auto flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] border border-[#2a2f37] text-[#9099a3] transition-colors duration-75 hover:border-[#4ade80] hover:text-[#4ade80]"
       >
         <CheckIcon className="h-5 w-5" />
       </button>
@@ -50,7 +55,7 @@ export function SetMarkButton({
         onClick={() => setConfirming(true)}
         aria-label="Deshacer este set"
         title="Deshacer"
-        className="ml-auto flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-[#22c55e]/20 text-[#4ade80] hover:bg-[#22c55e]/30"
+        className="ml-auto flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-[#22c55e]/20 text-[#4ade80] transition-colors duration-75 hover:bg-[#22c55e]/30"
       >
         <CheckIcon className="h-5 w-5" />
       </button>

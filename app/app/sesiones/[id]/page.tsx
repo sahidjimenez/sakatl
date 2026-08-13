@@ -13,7 +13,7 @@ import {
 } from "@/lib/actions/routines";
 import { ExerciseThumb } from "@/app/components/ExerciseThumb";
 import { RestTimer } from "@/app/components/RestTimer";
-import { SetMarkButton } from "@/app/components/SetMarkButton";
+import { SetRow } from "@/app/components/SetRow";
 import { SessionTimer } from "@/app/components/SessionTimer";
 import { SessionNotesModal } from "@/app/components/SessionNotesModal";
 import { SessionInfoModal } from "@/app/components/SessionInfoModal";
@@ -169,40 +169,23 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
                       {Array.from({ length: ex.plannedSets }, (_, setIdx) => {
                         const setNumber = setIdx + 1;
                         const log = logsByKey.get(`${ex.id}-${setNumber}`);
+                        const prevLog =
+                          setNumber > 1 ? logsByKey.get(`${ex.id}-${setNumber - 1}`) : undefined;
                         return (
-                          <form
+                          <SetRow
                             key={setNumber}
-                            action={logSetFormAction.bind(null, session.id)}
-                            className="flex flex-nowrap items-center gap-2 rounded-xl border border-[#23272e] bg-[#0d0f12] p-3 sm:gap-3 sm:p-3.5"
-                          >
-                            <input type="hidden" name="blockExerciseId" value={ex.id} />
-                            <input type="hidden" name="setNumber" value={setNumber} />
-                            <span className="w-5 shrink-0 text-sm font-semibold text-[#9099a3] sm:w-14">
-                              <span className="hidden sm:inline">Set </span>
-                              {setNumber}
-                            </span>
-                            <input
-                              type="number"
-                              name="weight"
-                              step="0.5"
-                              min={0}
-                              placeholder={ex.targetWeight != null ? String(ex.targetWeight) : "kg"}
-                              defaultValue={log?.weight ?? undefined}
-                              className="min-h-[48px] w-16 min-w-0 flex-1 rounded-[10px] border border-[#2a2f37] bg-[#1c2026] px-2.5 text-base text-[#f1f3f4] placeholder:text-[#6b7280] focus:outline-none focus:ring-1 focus:ring-[#4ade80] sm:w-24 sm:flex-none sm:px-3.5"
-                            />
-                            <input
-                              type="number"
-                              name="reps"
-                              min={0}
-                              placeholder="reps"
-                              defaultValue={log?.reps ?? undefined}
-                              className="min-h-[48px] w-16 min-w-0 flex-1 rounded-[10px] border border-[#2a2f37] bg-[#1c2026] px-2.5 text-base text-[#f1f3f4] placeholder:text-[#6b7280] focus:outline-none focus:ring-1 focus:ring-[#4ade80] sm:w-24 sm:flex-none sm:px-3.5"
-                            />
-                            <SetMarkButton
-                              completed={Boolean(log?.completed)}
-                              onUndo={deleteSetLogAction.bind(null, session.id, ex.id, setNumber)}
-                            />
-                          </form>
+                            blockExerciseId={ex.id}
+                            setNumber={setNumber}
+                            weight={log?.weight ?? null}
+                            reps={log?.reps ?? null}
+                            completed={Boolean(log?.completed)}
+                            targetWeight={ex.targetWeight ?? null}
+                            prevWeight={prevLog?.weight ?? null}
+                            prevReps={prevLog?.reps ?? null}
+                            prevCompleted={Boolean(prevLog?.completed)}
+                            logSetAction={logSetFormAction.bind(null, session.id)}
+                            onUndo={deleteSetLogAction.bind(null, session.id, ex.id, setNumber)}
+                          />
                         );
                       })}
                     </div>
