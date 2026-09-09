@@ -13,13 +13,9 @@ import {
 } from "./db/schema";
 import { getExerciseById } from "./exercises";
 
-export class ApiError extends Error {
-  status: number;
-  constructor(status: number, message: string) {
-    super(message);
-    this.status = status;
-  }
-}
+import { ApiError } from "./errors";
+import { assertRoutineCapacity } from "./billing/store";
+export { ApiError } from "./errors";
 
 export function handleApiError(error: unknown) {
   if (error instanceof ApiError) {
@@ -213,6 +209,7 @@ export async function createRoutine(ownerId: string, rawInput: unknown) {
   const input = validateRoutineInput(rawInput);
   const db = getDb();
   const routineId = await db.transaction(async (tx) => {
+    await assertRoutineCapacity(tx, ownerId);
     const [routine] = await tx
       .insert(routines)
       .values({
@@ -589,6 +586,7 @@ export async function followRoutine(originalRoutineId: string, followerId: strin
 
   const db = getDb();
   const routineId = await db.transaction(async (tx) => {
+    await assertRoutineCapacity(tx, followerId);
     const [routine] = await tx
       .insert(routines)
       .values({

@@ -6,6 +6,10 @@ const isPublicRoute = createRouteMatcher([
   "/api/exercises(.*)",
   "/sign-in(.*)",
   "/sign-up(.*)",
+  "/planes",
+  "/terminos",
+  "/privacidad",
+  "/api/billing/webhook",
   // Modo invitado: rutinas guardadas solo en localStorage, sin cuenta.
   "/invitado(.*)",
   // Vista pública de solo lectura de rutinas de la comunidad.

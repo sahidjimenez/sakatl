@@ -1,6 +1,9 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   boolean,
+  check,
+  index,
+  primaryKey,
   integer,
   numeric,
   pgEnum,
@@ -27,6 +30,48 @@ export const users = pgTable("users", {
   // Meta de entrenamientos por semana (configurable en Perfil), para "Meta semanal" del dashboard.
   weeklyGoal: integer("weekly_goal").notNull().default(4),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const billingAccounts = pgTable("billing_accounts", {
+  userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  customerId: text("customer_id").unique(),
+  routineLimit: integer("routine_limit").notNull().default(4),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [check("billing_accounts_routine_limit_check", sql`${table.routineLimit} >= 4`)]);
+
+export const billingSubscriptions = pgTable("billing_subscriptions", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  customerId: text("customer_id").notNull(),
+  priceId: text("price_id").notNull(),
+  status: text("status").notNull(),
+  paid: boolean("paid").notNull().default(false),
+  periodEnd: timestamp("period_end", { withTimezone: true }),
+  cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [index("billing_subscriptions_user_idx").on(table.userId)]);
+
+export const billingUsage = pgTable("billing_usage", {
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  capability: text("capability").notNull(),
+  windowKey: text("window_key").notNull(),
+  used: integer("used").notNull().default(0),
+}, table => [primaryKey({ columns: [table.userId, table.capability, table.windowKey] }), check("billing_usage_used_check", sql`${table.used} >= 0`)]);
+
+export const billingEvents = pgTable("billing_events", {
+  id: text("id").primaryKey(),
+  type: text("type").notNull(),
+  processedAt: timestamp("processed_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const billingConsents = pgTable("billing_consents", {
+  checkoutId: text("checkout_id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  version: text("version").notNull(),
+  amount: integer("amount").notNull(),
+  currency: text("currency").notNull().default("mxn"),
+  interval: text("interval").notNull(),
+  acceptedAt: timestamp("accepted_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const routines = pgTable("routines", {

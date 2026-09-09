@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
 import { requireUser } from "@/lib/auth";
@@ -24,6 +25,7 @@ export default async function PerfilPage() {
     <div className="flex-1 px-[clamp(20px,5vw,56px)] py-10">
       <div className="mx-auto flex max-w-[600px] flex-col gap-6">
         <h1 className="text-3xl font-extrabold">Perfil</h1>
+        <Link href="/app/plan" className="rounded-2xl border border-[#2a2f37] bg-[#1c2026] p-5 font-bold text-[#4ade80]">Mi plan y suscripción →</Link>
 
         <div className="flex items-center gap-4 rounded-2xl border border-[#2a2f37] bg-[#1c2026] p-5">
           <UserButton />

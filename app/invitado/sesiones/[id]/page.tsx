@@ -16,10 +16,9 @@ import {
   type GuestBlock,
   type GuestRoutine,
   type GuestSession,
-  type GuestSetLog,
 } from "@/lib/guest/storage";
 import { RestTimer } from "@/app/components/RestTimer";
-import { SetMarkButton } from "@/app/components/SetMarkButton";
+import { SetRow } from "@/app/components/SetRow";
 import { SessionTimer } from "@/app/components/SessionTimer";
 import { SessionNotesModal } from "@/app/components/SessionNotesModal";
 import { SessionInfoModal } from "@/app/components/SessionInfoModal";
@@ -235,15 +234,35 @@ export default function InvitadoSesionPage() {
                       {Array.from({ length: ex.plannedSets }, (_, setIdx) => {
                         const setNumber = setIdx + 1;
                         const log = logsByKey.get(`${ex.id}-${setNumber}`);
+                        const prevLog = logsByKey.get(`${ex.id}-${setNumber - 1}`);
                         return (
                           <SetRow
                             key={setNumber}
-                            sessionId={session!.id}
                             blockExerciseId={ex.id}
                             setNumber={setNumber}
                             targetWeight={ex.targetWeight}
-                            log={log}
-                            onChange={refresh}
+                            weight={log?.weight ?? null}
+                            reps={log?.reps ?? null}
+                            completed={Boolean(log?.completed)}
+                            prevWeight={prevLog?.weight ?? null}
+                            prevReps={prevLog?.reps ?? null}
+                            prevCompleted={Boolean(prevLog?.completed)}
+                            logSetAction={async (formData) => {
+                              const weight = formData.get("weight");
+                              const reps = formData.get("reps");
+                              upsertGuestSetLog(session.id, {
+                                blockExerciseId: ex.id,
+                                setNumber,
+                                weight: weight ? Number(weight) : null,
+                                reps: reps ? Number(reps) : null,
+                                completed: true,
+                              });
+                              refresh();
+                            }}
+                            onUndo={() => {
+                              deleteGuestSetLog(session.id, ex.id, setNumber);
+                              refresh();
+                            }}
                           />
                         );
                       })}
@@ -256,71 +275,5 @@ export default function InvitadoSesionPage() {
         </div>
       </div>
     </div>
-  );
-}
-
-function SetRow({
-  sessionId,
-  blockExerciseId,
-  setNumber,
-  targetWeight,
-  log,
-  onChange,
-}: {
-  sessionId: string;
-  blockExerciseId: string;
-  setNumber: number;
-  targetWeight: number | null;
-  log: GuestSetLog | undefined;
-  onChange: () => void;
-}) {
-  const [weight, setWeight] = useState(log?.weight != null ? String(log.weight) : "");
-  const [reps, setReps] = useState(log?.reps != null ? String(log.reps) : "");
-
-  function mark(e: React.FormEvent) {
-    e.preventDefault();
-    upsertGuestSetLog(sessionId, {
-      blockExerciseId,
-      setNumber,
-      weight: weight ? Number(weight) : null,
-      reps: reps ? Number(reps) : null,
-      completed: true,
-    });
-    onChange();
-  }
-
-  function remove() {
-    deleteGuestSetLog(sessionId, blockExerciseId, setNumber);
-    onChange();
-  }
-
-  return (
-    <form
-      onSubmit={mark}
-      className="flex flex-nowrap items-center gap-2 rounded-xl border border-[#23272e] bg-[#0d0f12] p-3 sm:gap-3 sm:p-3.5"
-    >
-      <span className="w-5 shrink-0 text-sm font-semibold text-[#9099a3] sm:w-14">
-        <span className="hidden sm:inline">Set </span>
-        {setNumber}
-      </span>
-      <input
-        type="number"
-        step="0.5"
-        min={0}
-        placeholder={targetWeight != null ? String(targetWeight) : "kg"}
-        value={weight}
-        onChange={(e) => setWeight(e.target.value)}
-        className="min-h-[48px] w-16 min-w-0 flex-1 rounded-[10px] border border-[#2a2f37] bg-[#1c2026] px-2.5 text-base text-[#f1f3f4] placeholder:text-[#6b7280] focus:outline-none focus:ring-1 focus:ring-[#4ade80] sm:w-24 sm:flex-none sm:px-3.5"
-      />
-      <input
-        type="number"
-        min={0}
-        placeholder="reps"
-        value={reps}
-        onChange={(e) => setReps(e.target.value)}
-        className="min-h-[48px] w-16 min-w-0 flex-1 rounded-[10px] border border-[#2a2f37] bg-[#1c2026] px-2.5 text-base text-[#f1f3f4] placeholder:text-[#6b7280] focus:outline-none focus:ring-1 focus:ring-[#4ade80] sm:w-24 sm:flex-none sm:px-3.5"
-      />
-      <SetMarkButton completed={Boolean(log?.completed)} onUndo={remove} />
-    </form>
   );
 }

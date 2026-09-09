@@ -1,4 +1,4 @@
-import { ToolLoopAgent, InferAgentUIMessage } from "ai";
+import { ToolLoopAgent, InferAgentUIMessage, stepCountIs } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { searchExercisesTool } from "@/lib/tools/search-exercises-tool";
 import { proposeRoutineTool } from "@/lib/tools/propose-routine-tool";
@@ -6,6 +6,8 @@ import { presentOptionsTool } from "@/lib/tools/present-options-tool";
 
 export const assistantAgent = new ToolLoopAgent({
   model: anthropic("claude-sonnet-5"),
+  maxOutputTokens: 1600,
+  stopWhen: stepCountIs(4),
   instructions: `Eres el asistente de entrenamiento de Sakatl. Recomiendas ejercicios y armas
 rutinas completas (ejercicios sueltos, bi-series o tri-series) según lo que pida el usuario
 (objetivo, músculos, equipo disponible, días por semana).

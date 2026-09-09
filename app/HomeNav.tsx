@@ -25,6 +25,7 @@ export default function HomeNav() {
           <a href="#comunidad">Comunidad</a>
           <a href="#registro">Registro</a>
           <Link href="/ejercicios">Ejercicios</Link>
+          <Link href="/planes">Planes</Link>
         </div>
 
         <div className="nav-actions">
@@ -55,6 +56,7 @@ export default function HomeNav() {
         <a href="#comunidad" onClick={close}>Comunidad</a>
         <a href="#registro" onClick={close}>Registro</a>
         <Link href="/ejercicios" onClick={close}>Ejercicios</Link>
+        <Link href="/planes" onClick={close}>Planes</Link>
         <Link href="/sign-in" onClick={close}>
           <button type="button" className="btn btn-enter">Entrar</button>
         </Link>
