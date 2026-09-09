@@ -11,7 +11,7 @@ export function PublicNav({
   active?: "invitado" | "comunidad";
 }) {
   return (
-    <header className="sticky top-0 z-10 border-b border-[#2a2f37] bg-[#0d0f12]/95 backdrop-blur">
+    <header className="public-nav sticky top-0 z-10 border-b border-[#2a2f37] bg-[#0d0f12]/95 backdrop-blur">
       <div className="mx-auto flex max-w-[1100px] flex-wrap items-center justify-between gap-3 px-[clamp(20px,5vw,56px)] py-4">
         <Link href="/" className="flex items-center gap-2.5">
           <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#22c55e]">

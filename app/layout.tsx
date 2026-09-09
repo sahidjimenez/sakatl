@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Archivo, Manrope, JetBrains_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
+import "./interface.css";
 import RegisterServiceWorker from "./register-sw";
 import { clerkAppearance } from "@/lib/clerk-appearance";
 
@@ -15,8 +16,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// Usadas solo por el home rediseñado (ver app/home.css, scope .home-page):
-// el resto del sitio se queda con Geist para no cambiar su tipografía.
+// Tipografías compartidas por la portada y la interfaz de entrenamiento.
 const archivo = Archivo({
   variable: "--font-archivo",
   subsets: ["latin"],

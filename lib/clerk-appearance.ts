@@ -2,19 +2,19 @@
 // de Clerk (SignIn, SignUp, UserButton, etc.) combinen con el resto de Sakatl.
 export const clerkAppearance = {
   variables: {
-    colorPrimary: "#22c55e",
-    colorBackground: "#1c2026",
-    colorInputBackground: "#0d0f12",
+    colorPrimary: "#3ddc84",
+    colorBackground: "#151d19",
+    colorInputBackground: "#0b100e",
     colorInputText: "#f1f3f4",
     colorText: "#f1f3f4",
-    colorTextSecondary: "#9099a3",
-    colorNeutral: "#9099a3",
-    colorShimmer: "#2a2f37",
-    borderRadius: "10px",
-    fontFamily: "-apple-system, system-ui, sans-serif",
+    colorTextSecondary: "#a2b0a7",
+    colorNeutral: "#a2b0a7",
+    colorShimmer: "#2b3930",
+    borderRadius: "14px",
+    fontFamily: "var(--font-manrope), system-ui, sans-serif",
   },
   elements: {
-    card: "bg-[#1c2026] border border-[#2a2f37] shadow-none",
+    card: "bg-[#1c2026] border border-[#2a2f37] shadow-xl",
     headerTitle: "text-[#f1f3f4]",
     headerSubtitle: "text-[#9099a3]",
     socialButtonsBlockButton: "border-[#2a2f37] bg-transparent text-[#f1f3f4] hover:bg-[#23272e]",

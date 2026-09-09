@@ -1,6 +1,6 @@
 /* Tokens extraidos de "Sakatl Home v2.dc.html" / "Sakatl Home Mobile.dc.html" (Claude Design). */
 .home-page {
-  --bg: #08090a;
+  --bg: #0b100e;
   --surface-a: #111514;
   --surface-b: #0b0d0c;
   --surface-flat: #0e1110;
@@ -10,8 +10,8 @@
   --border-subtle: rgba(255, 255, 255, 0.05);
   --text: #f2f5f3;
   --muted: #9aa39d;
-  --dim: #6f7873;
-  --dim-2: #4d5652;
+  --dim: #89998f;
+  --dim-2: #829087;
   --accent: #3ddc84;
   --accent-strong: #5ef29c;
   --accent-ink: #06210f;
@@ -31,6 +31,13 @@
 .home-page * { box-sizing: border-box; }
 .home-page ::selection { background: rgba(61, 220, 132, 0.28); }
 .home-page .wrap { max-width: 1180px; margin: 0 auto; padding: 0 var(--edge); }
+
+/* Softer depth and a consistent edge treatment across the landing page. */
+.home-page :is(.hero-card, .card, .community-card, .cta-panel, .modal-panel) {
+  box-shadow: 0 16px 48px #00000026, inset 0 1px 0 #ffffff06;
+}
+.home-page .modal-panel { max-height: calc(100dvh - 40px); overflow-y: auto; }
+.home-page .modal-backdrop { backdrop-filter: blur(6px); }
 
 @keyframes sk-pulse {
   0%, 100% { opacity: 0.55; transform: scale(1); }

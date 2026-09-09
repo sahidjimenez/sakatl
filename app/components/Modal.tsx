@@ -66,12 +66,12 @@ function ModalInner({
     // crea un containing block que atraparía "fixed" ahí en vez de cubrir
     // toda la pantalla.
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/70 transition-opacity duration-200 ${
+      className={`ui-modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/70 transition-opacity duration-200 ${
         variant === "sheet" ? "items-end p-0 sm:items-center sm:p-4" : "p-4"
       } ${visible ? "opacity-100" : "opacity-0"}`}
       onClick={requestClose}
     >
-      <div className={panelClass} onClick={(e: MouseEvent) => e.stopPropagation()}>
+      <div className={`ui-modal-panel ${panelClass}`} onClick={(e: MouseEvent) => e.stopPropagation()}>
         {children}
       </div>
     </div>,

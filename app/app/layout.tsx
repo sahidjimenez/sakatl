@@ -4,8 +4,8 @@ import { SidebarNav, BottomTabs } from "./AppNav";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[#0d0f12] text-[#f1f3f4] md:flex">
-      <aside className="hidden md:sticky md:top-0 md:flex md:h-screen md:w-72 md:shrink-0 md:flex-col md:border-r md:border-[#2a2f37] md:p-5">
+    <div className="app-shell min-h-screen bg-[#0d0f12] text-[#f1f3f4] md:flex">
+      <aside className="app-sidebar hidden md:sticky md:top-0 md:flex md:h-screen md:w-72 md:shrink-0 md:flex-col md:border-r md:border-[#2a2f37] md:p-5">
         <div className="mb-6 flex items-center justify-between">
           <Link href="/app" className="flex items-center gap-2.5">
             <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#22c55e]">
@@ -36,7 +36,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </Link>
       </aside>
 
-      <div className="flex min-h-screen flex-1 flex-col pb-16 md:pb-0">{children}</div>
+      <div className="app-content flex min-h-screen min-w-0 flex-1 flex-col pb-16 md:pb-0">{children}</div>
 
       <BottomTabs />
     </div>
