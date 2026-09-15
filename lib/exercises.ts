@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { muscleGroupLabel, normalizeExerciseSearch } from "./exercise-muscles";
 
 export type ExerciseRecord = {
   id: string;
@@ -80,6 +81,7 @@ export function getFilterOptions() {
 }
 
 export type SearchParams = {
+  muscleGroup?: string;
   q?: string;
   category?: string;
   equipment?: string;
@@ -88,6 +90,7 @@ export type SearchParams = {
 };
 
 export function searchExercises({
+  muscleGroup = "",
   q = "",
   category = "",
   equipment = "",
@@ -95,21 +98,17 @@ export function searchExercises({
   limit = 24,
 }: SearchParams) {
   const exercises = loadExercises();
-  const needle = q.trim().toLowerCase();
+  const needle = normalizeExerciseSearch(q);
 
   const filtered = exercises.filter((ex) => {
+    if (muscleGroup && muscleGroupLabel(ex.muscle_group) !== muscleGroup) return false;
     if (category && ex.category !== category) return false;
     if (equipment && ex.equipment !== equipment) return false;
     if (!needle) return true;
-    return (
-      ex.name.toLowerCase().includes(needle) ||
-      ex.target.toLowerCase().includes(needle) ||
-      ex.muscle_group.toLowerCase().includes(needle) ||
-      ex.category.toLowerCase().includes(needle) ||
-      ex.equipment.toLowerCase().includes(needle) ||
-      ex.secondary_muscles.some((m) => m.toLowerCase().includes(needle)) ||
-      ex.instructions.es.toLowerCase().includes(needle)
-    );
+    return normalizeExerciseSearch([
+      ex.name, ex.target, ex.muscle_group, muscleGroupLabel(ex.muscle_group),
+      ex.category, ex.equipment, ...ex.secondary_muscles, ex.instructions.es,
+    ].join(" ")).includes(needle);
   });
 
   const total = filtered.length;
