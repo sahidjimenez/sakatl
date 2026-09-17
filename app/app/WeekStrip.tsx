@@ -9,38 +9,33 @@ const FULL_DAY_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "
 
 type WeekdayRoutine = { id: string; name: string; description: string | null; blockCount: number };
 
-function isoWeekdayOf(date: Date): number {
-  return ((date.getDay() + 6) % 7) + 1;
-}
-
 export function WeekStrip({
   weekDates,
+  todayWeekday,
   scheduledWeekdays,
   routinesByWeekday,
 }: {
-  weekDates: Date[];
+  weekDates: { key: string; day: number }[];
+  todayWeekday: number;
   scheduledWeekdays: number[];
   routinesByWeekday: Record<number, WeekdayRoutine[]>;
 }) {
-  const today = new Date();
-  const todayIso = today.toDateString();
-  const [selectedDay, setSelectedDay] = useState<number>(isoWeekdayOf(today));
+  const [selectedDay, setSelectedDay] = useState<number>(todayWeekday);
 
-  const selectedDate = weekDates[selectedDay - 1];
   const selectedRoutines = routinesByWeekday[selectedDay] ?? [];
-  const isSelectedToday = selectedDate.toDateString() === todayIso;
+  const isSelectedToday = selectedDay === todayWeekday;
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex gap-2 overflow-x-auto pb-1">
         {weekDates.map((date, i) => {
           const iso = i + 1;
-          const isToday = date.toDateString() === todayIso;
+          const isToday = iso === todayWeekday;
           const isSelected = selectedDay === iso;
           const hasRoutine = scheduledWeekdays.includes(iso);
           return (
             <button
-              key={i}
+              key={date.key}
               type="button"
               onClick={() => setSelectedDay(iso)}
               className={`flex min-w-[64px] flex-col items-center gap-1 rounded-xl px-3 py-2.5 transition-colors ${
@@ -58,7 +53,7 @@ export function WeekStrip({
               >
                 {DAY_LABELS[i]}
               </span>
-              <span className="text-lg font-extrabold">{date.getDate()}</span>
+              <span className="text-lg font-extrabold">{date.day}</span>
               {hasRoutine && (
                 <span
                   className={`h-1.5 w-1.5 rounded-full ${isSelected ? "bg-[#08150d]" : "bg-[#4ade80]"}`}

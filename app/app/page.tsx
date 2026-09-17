@@ -11,23 +11,11 @@ import {
 import { startSessionAction } from "@/lib/actions/routines";
 import { formatDuration } from "@/lib/format";
 import { WeekStrip } from "@/app/app/WeekStrip";
+import { getDashboardWeek } from "@/lib/calendar";
 
 export const metadata: Metadata = {
   title: "Inicio — Sakatl",
 };
-
-function getWeekDates(): Date[] {
-  const now = new Date();
-  const isoDay = now.getDay() === 0 ? 7 : now.getDay();
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - (isoDay - 1));
-  monday.setHours(0, 0, 0, 0);
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
-    return d;
-  });
-}
 
 export default async function AppDashboard() {
   const userId = await requireUser();
@@ -40,7 +28,7 @@ export default async function AppDashboard() {
   ]);
 
   const firstName = user?.firstName ?? "";
-  const weekDates = getWeekDates();
+  const { weekDates, todayWeekday } = getDashboardWeek();
   const progressPct = Math.min(100, Math.round((progress.sessionsCount / progress.weeklyGoal) * 100));
 
   return (
@@ -62,6 +50,7 @@ export default async function AppDashboard() {
 
         <WeekStrip
           weekDates={weekDates}
+          todayWeekday={todayWeekday}
           scheduledWeekdays={schedule.scheduledWeekdays}
           routinesByWeekday={routinesByWeekday}
         />
