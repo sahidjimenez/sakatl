@@ -146,9 +146,6 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
         </div>
 
         <div className="flex flex-col gap-4">
-          {Object.keys(personalNotes).length > 0 && <p role="status" className="rounded-xl border border-amber-300/30 bg-amber-300/5 p-4 text-sm text-amber-200">
-            Tienes notas personales en {Object.keys(personalNotes).length} ejercicio(s) de esta rutina. Revísalas antes de comenzar; aparecen debajo de cada ejercicio.
-          </p>}
           {blocksWithMeta.map(({ block, label, totalSets, completedSets }) => (
             <CollapsibleBlock
               key={block.id}
