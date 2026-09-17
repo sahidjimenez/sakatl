@@ -52,7 +52,13 @@ function CreateExerciseDialog({ onClose, onCreated, forRoutine }: {
     <dialog
       ref={dialogRef}
       aria-labelledby={titleId}
-      onCancel={(event) => { event.preventDefault(); if (!saving) onClose(); }}
+      onCancel={(event) => {
+        // File inputs also emit a bubbling cancel event when their picker is dismissed.
+        // Only a cancel originating on the dialog should close this form.
+        if (event.target !== event.currentTarget) return;
+        event.preventDefault();
+        if (!saving) onClose();
+      }}
       onClick={(event) => { if (event.target === event.currentTarget && !saving) onClose(); }}
       className="m-auto max-h-[90dvh] w-[calc(100%_-_2rem)] max-w-2xl overflow-y-auto rounded-2xl border border-[#2a2f37] bg-[#0d0f12] p-0 text-[#f1f3f4] shadow-2xl backdrop:bg-black/75"
     >
