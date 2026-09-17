@@ -1,3 +1,5 @@
+import { sessionClock } from "./session-timing";
+import { calculateSessionClock } from "./session-clock";
 import { and, desc, eq, gte, ilike, inArray, isNotNull, isNull, lt, ne, or, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { getDb } from "./db";
@@ -176,6 +178,7 @@ export async function getUserProfile(userId: string) {
       displayName: users.displayName,
       avatarUrl: users.avatarUrl,
       weeklyGoal: users.weeklyGoal,
+      autoPauseMinutes: users.autoPauseMinutes,
     })
     .from(users)
     .where(eq(users.id, userId))
@@ -627,6 +630,10 @@ export async function startSession(routineId: string, userId: string) {
   if (routine.ownerId !== userId) throw new ApiError(403, "No eres dueño de esta rutina.");
 
   const db = getDb();
+  const [existing] = await db.select().from(workoutSessions)
+    .where(and(eq(workoutSessions.routineId, routineId), eq(workoutSessions.userId, userId), isNull(workoutSessions.completedAt)))
+    .orderBy(desc(workoutSessions.startedAt)).limit(1);
+  if (existing) return existing;
   const [session] = await db
     .insert(workoutSessions)
     .values({ routineId, userId })
@@ -691,6 +698,7 @@ async function getSessionExtraBlocks(sessionId: string) {
 }
 
 export async function getSessionDetail(sessionId: string, userId: string) {
+  const clock = await sessionClock(userId, sessionId);
   const session = await getSessionRow(sessionId);
   if (!session) throw new ApiError(404, "Sesión no encontrada.");
   if (session.userId !== userId) throw new ApiError(403, "No es tu sesión.");
@@ -712,7 +720,7 @@ export async function getSessionDetail(sessionId: string, userId: string) {
       }
     : null;
 
-  return { ...session, routine: combinedRoutine, setLogs: logs };
+  return { ...session, clock, routine: combinedRoutine, setLogs: logs };
 }
 
 export async function addExtraExerciseToSession(
@@ -769,31 +777,13 @@ export async function deleteSession(sessionId: string, userId: string) {
 }
 
 export async function completeSession(sessionId: string, userId: string) {
-  const session = await getSessionRow(sessionId);
-  if (!session) throw new ApiError(404, "Sesión no encontrada.");
-  if (session.userId !== userId) throw new ApiError(403, "No es tu sesión.");
-
-  const db = getDb();
-  const [updated] = await db
-    .update(workoutSessions)
-    .set({ completedAt: new Date() })
-    .where(eq(workoutSessions.id, sessionId))
-    .returning();
-  return updated;
+  await sessionClock(userId, sessionId, "finish");
+  return getSessionRow(sessionId);
 }
 
 export async function reopenSession(sessionId: string, userId: string) {
-  const session = await getSessionRow(sessionId);
-  if (!session) throw new ApiError(404, "Sesión no encontrada.");
-  if (session.userId !== userId) throw new ApiError(403, "No es tu sesión.");
-
-  const db = getDb();
-  const [updated] = await db
-    .update(workoutSessions)
-    .set({ completedAt: null })
-    .where(eq(workoutSessions.id, sessionId))
-    .returning();
-  return updated;
+  await sessionClock(userId, sessionId, "reopen");
+  return getSessionRow(sessionId);
 }
 
 export type SetLogInput = {
@@ -879,6 +869,7 @@ export async function upsertSetLog(sessionId: string, userId: string, rawInput: 
     })
     .returning();
 
+  await sessionClock(userId, sessionId, "activity");
   return log;
 }
 
@@ -1019,6 +1010,7 @@ export async function getWeeklyProgress(userId: string): Promise<WeeklyProgress>
   const sessions = await db
     .select({
       id: workoutSessions.id,
+      activeSeconds: workoutSessions.activeSeconds,
       startedAt: workoutSessions.startedAt,
       completedAt: workoutSessions.completedAt,
     })
@@ -1033,7 +1025,7 @@ export async function getWeeklyProgress(userId: string): Promise<WeeklyProgress>
     );
 
   const totalMs = sessions.reduce(
-    (sum, s) => sum + (s.completedAt ? s.completedAt.getTime() - s.startedAt.getTime() : 0),
+    (sum, s) => sum + (s.completedAt ? s.activeSeconds * 1000 : 0),
     0,
   );
 
@@ -1221,24 +1213,34 @@ export type SessionHistoryItem = {
   routineId: string;
   routineName: string;
   startedAt: Date;
+  activeSeconds: number;
+  paused: boolean;
   completedAt: Date | null;
 };
 
-export async function listAllMySessions(userId: string, limit = 50): Promise<SessionHistoryItem[]> {
+export async function listAllMySessions(userId: string, limit = 50, month?: string): Promise<SessionHistoryItem[]> {
   const db = getDb();
-  return db
+  const query = db
     .select({
       id: workoutSessions.id,
       routineId: workoutSessions.routineId,
       routineName: routines.name,
+      runningSince: workoutSessions.runningSince,
+      lastActivityAt: workoutSessions.lastActivityAt,
+      autoPauseMinutes: users.autoPauseMinutes,
+      activeSeconds: workoutSessions.activeSeconds,
       startedAt: workoutSessions.startedAt,
       completedAt: workoutSessions.completedAt,
     })
     .from(workoutSessions)
     .innerJoin(routines, eq(routines.id, workoutSessions.routineId))
-    .where(eq(workoutSessions.userId, userId))
-    .orderBy(desc(workoutSessions.startedAt))
-    .limit(limit);
+    .innerJoin(users, eq(users.id, workoutSessions.userId))
+    .where(and(eq(workoutSessions.userId, userId), month
+      ? sql`to_char(${workoutSessions.startedAt} AT TIME ZONE 'America/Mexico_City', 'YYYY-MM') = ${month}`
+      : undefined))
+    .orderBy(desc(workoutSessions.startedAt));
+  const rows = await (month ? query : query.limit(limit));
+  return rows.map(row => ({ ...row, ...calculateSessionClock(row, row.autoPauseMinutes) }));
 }
 
 export async function updateWeeklyGoal(userId: string, weeklyGoal: number) {

@@ -46,6 +46,7 @@ export const users = pgTable("users", {
   avatarUrl: text("avatar_url"),
   // Meta de entrenamientos por semana (configurable en Perfil), para "Meta semanal" del dashboard.
   weeklyGoal: integer("weekly_goal").notNull().default(4),
+  autoPauseMinutes: integer("auto_pause_minutes").notNull().default(15),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -154,6 +155,9 @@ export const workoutSessions = pgTable("workout_sessions", {
     .references(() => users.id, { onDelete: "cascade" }),
   startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
   completedAt: timestamp("completed_at", { withTimezone: true }),
+  activeSeconds: integer("active_seconds").notNull().default(0),
+  runningSince: timestamp("running_since", { withTimezone: true }).defaultNow(),
+  lastActivityAt: timestamp("last_activity_at", { withTimezone: true }).notNull().defaultNow(),
   // Nota libre sobre cómo se sintió la sesión (dolores, energía, etc.).
   notes: text("notes"),
 });

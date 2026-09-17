@@ -8,6 +8,9 @@ import { listBodyWeightHistory } from "@/lib/body-metrics";
 import { updateWeeklyGoalAction } from "@/lib/actions/routines";
 import { logBodyWeightAction } from "@/lib/actions/body-metrics";
 import { PushNotificationToggle } from "@/app/components/PushNotificationToggle";
+import { listMyCustomExercises } from "@/lib/custom-exercises";
+import { MyExercises } from "./MyExercises";
+import { saveAutoPauseAction } from "@/lib/actions/session-timing";
 
 export const metadata: Metadata = {
   title: "Perfil — Sakatl",
@@ -15,10 +18,11 @@ export const metadata: Metadata = {
 
 export default async function PerfilPage() {
   const userId = await requireUser();
-  const [user, profile, weightHistory] = await Promise.all([
+  const [user, profile, weightHistory, exercises] = await Promise.all([
     currentUser(),
     getUserProfile(userId),
     listBodyWeightHistory(userId, 5),
+    listMyCustomExercises(userId),
   ]);
 
   return (
@@ -63,6 +67,20 @@ export default async function PerfilPage() {
         </div>
 
         <PushNotificationToggle />
+        <section className="rounded-2xl border border-[#2a2f37] bg-[#1c2026] p-5">
+          <h2 className="font-bold">Pausa automática</h2>
+          <p className="mt-2 text-sm text-[#9099a3]">El contador se pausa después de este tiempo sin registrar una serie. Funciona aunque cierres la aplicación y conserva tu avance.</p>
+          <form action={saveAutoPauseAction} className="mt-4 flex flex-wrap items-center gap-3">
+            <label className="text-sm">Tiempo de inactividad
+              <select name="minutes" defaultValue={profile?.autoPauseMinutes ?? 15} className="ml-2 rounded-lg bg-[#0d0f12] p-3">
+                <option value="0">Desactivada</option>
+                {[5, 10, 15, 20, 30, 60].map(minutes => <option key={minutes} value={minutes}>{minutes} minutos</option>)}
+              </select>
+            </label>
+            <button className="rounded-lg bg-[#22c55e] px-4 py-3 text-sm font-bold text-black">Guardar</button>
+          </form>
+        </section>
+        <MyExercises exercises={exercises} />
 
         <div className="rounded-2xl border border-[#2a2f37] bg-[#1c2026] p-5">
           <p className="mb-1 text-base font-bold text-[#f1f3f4]">Peso corporal</p>

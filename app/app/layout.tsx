@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
 import { SidebarNav, BottomTabs } from "./AppNav";
+import { PendingWorkout } from "@/app/components/PendingWorkout";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -36,7 +37,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </Link>
       </aside>
 
-      <div className="app-content flex min-h-screen min-w-0 flex-1 flex-col pb-16 md:pb-0">{children}</div>
+      <div className="app-content flex min-h-screen min-w-0 flex-1 flex-col pb-16 md:pb-0"><PendingWorkout />{children}</div>
 
       <BottomTabs />
     </div>

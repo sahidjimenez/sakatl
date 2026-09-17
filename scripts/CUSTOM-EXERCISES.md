@@ -9,7 +9,9 @@ La migración `scripts/migrations/002-custom-exercises.sql` crea dos tablas:
 - `custom_exercises`: autor (ID de Clerk), ficha completa y fecha.
 - `exercise_media`: GIF de hasta 3 MB, almacenado como `bytea`, separado de la ficha para que las búsquedas no descarguen imágenes.
 
-Ambas tablas tienen RLS activado; el servidor usa el rol propietario ya configurado. El navegador no recibe permisos SQL. La creación de la ficha y del GIF ocurre en una transacción: se guardan ambos o ninguno. Los GIF se sirven mediante una ruta pública con caché, y no se pueden reemplazar desde la interfaz.
+Ambas tablas tienen RLS activado; el servidor usa el rol propietario ya configurado. El navegador no recibe permisos SQL. La creación y edición de la ficha y del GIF ocurren en una transacción: se guardan ambos o ninguno. Los GIF se sirven mediante una ruta pública con caché; al reemplazarlos se cambia la versión de su URL.
+
+Desde **Perfil → Mis ejercicios creados**, el autor puede editar la ficha, reemplazar el GIF o eliminar el ejercicio. Las operaciones verifican la propiedad en el servidor. Eliminar agrega `deleted_at` al registro JSON existente (sin migración adicional): lo oculta de la biblioteca y el perfil, pero conserva la ficha y el GIF para las rutinas y sesiones que ya lo utilizan.
 
 La migración se aplicó a la base indicada por `.env.local` durante esta implementación. Si producción usa otra rama/base de Neon, ejecuta el mismo SQL allí antes de desplegar. Es repetible y no cambia rutinas ni ejercicios existentes. Si el servidor usa un rol distinto al propietario, configura permisos y políticas específicos para ese rol antes de habilitar la función.
 

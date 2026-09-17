@@ -34,7 +34,10 @@ export default async function RutinasPage() {
       <div className="mx-auto flex max-w-[1100px] flex-col gap-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <h1 className="text-3xl font-extrabold">Mis rutinas</h1>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href="/ejercicios" className="rounded-[10px] border border-[#2a2f37] bg-[#1c2026] px-4 py-2.5 text-sm font-bold text-[#f1f3f4] hover:border-[#4ade80]">
+              Ejercicios
+            </Link>
             <Link
               href="/app/rutinas/calendario"
               aria-label="Ver calendario de rutinas"

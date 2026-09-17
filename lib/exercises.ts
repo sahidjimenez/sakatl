@@ -19,6 +19,7 @@ export type ExerciseRecord = {
   gif_url: string;
   attribution: string;
   created_at: string;
+  deleted_at?: string;
 };
 
 export type ExerciseSummary = {
@@ -134,7 +135,7 @@ export function getExerciseById(id: string): ExerciseDetail | null {
 
 // One database read per operation; the returned lookup also resolves the bundled catalog.
 export async function getExerciseLookup() {
-  const custom = new Map((await loadCustomExercises()).map((ex) => [ex.id, ex]));
+  const custom = new Map((await loadCustomExercises(true)).map((ex) => [ex.id, ex]));
   return (id: string): ExerciseDetail | null => {
     const ex = custom.get(id);
     if (!ex) return getExerciseById(id);

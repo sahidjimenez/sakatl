@@ -7,6 +7,7 @@ import {
   getStreak,
   getTodayAndUpcoming,
   getWeeklyProgress,
+  listMyRoutinesSchedule,
 } from "@/lib/routines";
 import { startSessionAction } from "@/lib/actions/routines";
 import { formatDuration } from "@/lib/format";
@@ -19,12 +20,13 @@ export const metadata: Metadata = {
 
 export default async function AppDashboard() {
   const userId = await requireUser();
-  const [user, progress, schedule, streak, routinesByWeekday] = await Promise.all([
+  const [user, progress, schedule, streak, routinesByWeekday, routines] = await Promise.all([
     currentUser(),
     getWeeklyProgress(userId),
     getTodayAndUpcoming(userId),
     getStreak(userId),
     getRoutinesGroupedByWeekday(userId),
+    listMyRoutinesSchedule(userId),
   ]);
 
   const firstName = user?.firstName ?? "";
@@ -49,6 +51,7 @@ export default async function AppDashboard() {
         </div>
 
         <WeekStrip
+          routines={routines}
           weekDates={weekDates}
           todayWeekday={todayWeekday}
           scheduledWeekdays={schedule.scheduledWeekdays}

@@ -14,7 +14,7 @@ import {
 import { ExerciseThumb } from "@/app/components/ExerciseThumb";
 import { RestTimer } from "@/app/components/RestTimer";
 import { SetRow } from "@/app/components/SetRow";
-import { SessionTimer } from "@/app/components/SessionTimer";
+import { PersistentSessionTimer } from "@/app/components/PersistentSessionTimer";
 import { SessionNotesModal } from "@/app/components/SessionNotesModal";
 import { SessionInfoModal } from "@/app/components/SessionInfoModal";
 import { ManualRestButton } from "@/app/components/ManualRestButton";
@@ -86,7 +86,7 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
               {session.completedAt ? "Sesión completada" : "Entrenando"}
             </h1>
             <div className="flex items-center gap-2">
-              <SessionTimer startedAt={session.startedAt} endedAt={session.completedAt} />
+              <PersistentSessionTimer sessionId={session.id} initial={session.clock} />
               {session.completedAt ? (
                 <form action={reopenSessionAction.bind(null, session.id)}>
                   <button
