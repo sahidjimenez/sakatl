@@ -50,6 +50,14 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const exerciseNotes = pgTable("exercise_notes", {
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  exerciseId: text("exercise_id").notNull(),
+  note: text("note").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [primaryKey({ columns: [table.userId, table.exerciseId] }),
+  check("exercise_notes_length", sql`char_length(${table.note}) BETWEEN 1 AND 2000`)]).enableRLS();
+
 export const billingAccounts = pgTable("billing_accounts", {
   userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
   customerId: text("customer_id").unique(),

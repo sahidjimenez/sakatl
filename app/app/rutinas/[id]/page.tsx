@@ -11,6 +11,8 @@ import { ExerciseThumb } from "@/app/components/ExerciseThumb";
 import { LikeButton } from "@/app/components/LikeButton";
 import { ConfirmButton } from "@/app/components/ConfirmButton";
 import { StartSessionButton } from "@/app/components/StartSessionButton";
+import { getExerciseNotes } from "@/lib/exercise-notes";
+import { PersonalExerciseNote } from "@/app/components/PersonalExerciseNote";
 
 const BLOCK_LABELS: Record<string, string> = {
   single: "Ejercicio suelto",
@@ -29,9 +31,10 @@ export default async function RoutineDetailPage({
   if (!routine) notFound();
 
   const isOwner = routine.ownerId === userId;
-  const [sessions, likeInfo] = await Promise.all([
+  const [sessions, likeInfo, personalNotes] = await Promise.all([
     isOwner ? listRoutineSessions(id, userId) : Promise.resolve([]),
     getRoutineLikeInfo(id, userId),
+    getExerciseNotes(userId, routine.blocks.flatMap(block => block.exercises.map(ex => ex.exerciseId))),
   ]);
 
   return (
@@ -135,6 +138,7 @@ export default async function RoutineDetailPage({
                           ` · ${ex.targetRepsMin ?? "?"}-${ex.targetRepsMax ?? "?"} reps`}
                         {ex.targetWeight != null && ` · ${ex.targetWeight} kg`}
                       </p>
+                      <PersonalExerciseNote exerciseId={ex.exerciseId} name={ex.exercise?.name ?? ex.exerciseId} note={personalNotes[ex.exerciseId] ?? ""} />
                     </div>
                   </div>
                 ))}

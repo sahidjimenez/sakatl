@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { getSessionDetail } from "@/lib/routines";
+import { getExerciseNotes } from "@/lib/exercise-notes";
+import { PersonalExerciseNote } from "@/app/components/PersonalExerciseNote";
 import {
   addExtraExerciseAction,
   cancelSessionAction,
@@ -35,6 +37,7 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
   const userId = await requireUser();
   const session = await getSessionDetail(id, userId);
   if (!session.routine) notFound();
+  const personalNotes = await getExerciseNotes(userId, session.routine.blocks.flatMap(block => block.exercises.map(ex => ex.exerciseId)));
 
   const logsByKey = new Map(
     session.setLogs.map((log) => [`${log.blockExerciseId}-${log.setNumber}`, log]),
@@ -143,6 +146,9 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
         </div>
 
         <div className="flex flex-col gap-4">
+          {Object.keys(personalNotes).length > 0 && <p role="status" className="rounded-xl border border-amber-300/30 bg-amber-300/5 p-4 text-sm text-amber-200">
+            Tienes notas personales en {Object.keys(personalNotes).length} ejercicio(s) de esta rutina. Revísalas antes de comenzar; aparecen debajo de cada ejercicio.
+          </p>}
           {blocksWithMeta.map(({ block, label, totalSets, completedSets }) => (
             <CollapsibleBlock
               key={block.id}
@@ -171,6 +177,7 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
                         )}
                       </p>
                     </div>
+                    <PersonalExerciseNote exerciseId={ex.exerciseId} name={ex.exercise?.name ?? ex.exerciseId} note={personalNotes[ex.exerciseId] ?? ""} />
                     <div className="flex flex-col gap-2">
                       {Array.from({ length: ex.plannedSets }, (_, setIdx) => {
                         const setNumber = setIdx + 1;
