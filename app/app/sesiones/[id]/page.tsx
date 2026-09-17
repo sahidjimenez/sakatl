@@ -165,7 +165,7 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
                           imgClassName="h-10 w-10 rounded-lg object-cover"
                         />
                       )}
-                      <p className="text-sm font-semibold text-[#f1f3f4]">
+                      <p className="flex-1 text-sm font-semibold text-[#f1f3f4]">
                         {ex.exercise?.name ?? ex.exerciseId}
                         {(ex.targetRepsMin || ex.targetRepsMax) && (
                           <span className="ml-2 text-xs font-normal text-[#9099a3]">
@@ -173,8 +173,8 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
                           </span>
                         )}
                       </p>
+                      <PersonalExerciseNote exerciseId={ex.exerciseId} name={ex.exercise?.name ?? ex.exerciseId} note={personalNotes[ex.exerciseId] ?? ""} />
                     </div>
-                    <PersonalExerciseNote exerciseId={ex.exerciseId} name={ex.exercise?.name ?? ex.exerciseId} note={personalNotes[ex.exerciseId] ?? ""} />
                     <div className="flex flex-col gap-2">
                       {Array.from({ length: ex.plannedSets }, (_, setIdx) => {
                         const setNumber = setIdx + 1;

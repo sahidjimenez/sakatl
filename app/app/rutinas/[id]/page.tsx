@@ -138,8 +138,8 @@ export default async function RoutineDetailPage({
                           ` · ${ex.targetRepsMin ?? "?"}-${ex.targetRepsMax ?? "?"} reps`}
                         {ex.targetWeight != null && ` · ${ex.targetWeight} kg`}
                       </p>
-                      <PersonalExerciseNote exerciseId={ex.exerciseId} name={ex.exercise?.name ?? ex.exerciseId} note={personalNotes[ex.exerciseId] ?? ""} />
                     </div>
+                    <PersonalExerciseNote exerciseId={ex.exerciseId} name={ex.exercise?.name ?? ex.exerciseId} note={personalNotes[ex.exerciseId] ?? ""} />
                   </div>
                 ))}
               </div>
