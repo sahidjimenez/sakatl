@@ -1,7 +1,7 @@
 import { and, eq, gte, inArray, isNotNull, sql } from "drizzle-orm";
 import { getDb } from "./db";
 import { routineBlockExercises, setLogs, workoutSessions } from "./db/schema";
-import { getExerciseById } from "./exercises";
+import { getExerciseLookup } from "./exercises";
 import { startOfWeekUTC } from "./routines";
 
 export type WeeklyVolumePoint = {
@@ -70,6 +70,7 @@ export type ExercisePR = {
 };
 
 export async function getExercisePRs(userId: string, limit = 8): Promise<ExercisePR[]> {
+  const getExerciseById = await getExerciseLookup();
   const db = getDb();
   const rows = await db
     .select({
@@ -126,6 +127,7 @@ export async function getMuscleDistribution(
   userId: string,
   days = 90,
 ): Promise<MuscleDistributionPoint[]> {
+  const getExerciseById = await getExerciseLookup();
   const db = getDb();
   const since = new Date();
   since.setUTCDate(since.getUTCDate() - days);

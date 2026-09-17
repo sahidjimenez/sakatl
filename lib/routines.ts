@@ -11,7 +11,7 @@ import {
   workoutSessions,
   type blockTypeEnum,
 } from "./db/schema";
-import { getExerciseById } from "./exercises";
+import { getExerciseLookup } from "./exercises";
 
 import { ApiError } from "./errors";
 import { assertRoutineCapacity } from "./billing/store";
@@ -51,7 +51,8 @@ export type RoutineInput = {
   blocks: BlockInput[];
 };
 
-function validateRoutineInput(input: unknown): RoutineInput {
+async function validateRoutineInput(input: unknown): Promise<RoutineInput> {
+  const getExerciseById = await getExerciseLookup();
   if (typeof input !== "object" || input === null) {
     throw new ApiError(400, "Body inválido.");
   }
@@ -206,7 +207,7 @@ async function insertBlocks(routineId: string, blocks: BlockInput[]) {
 }
 
 export async function createRoutine(ownerId: string, rawInput: unknown) {
-  const input = validateRoutineInput(rawInput);
+  const input = await validateRoutineInput(rawInput);
   const db = getDb();
   const routineId = await db.transaction(async (tx) => {
     await assertRoutineCapacity(tx, ownerId);
@@ -230,7 +231,7 @@ export async function updateRoutine(routineId: string, ownerId: string, rawInput
   if (!routine) throw new ApiError(404, "Rutina no encontrada.");
   if (routine.ownerId !== ownerId) throw new ApiError(403, "No eres dueño de esta rutina.");
 
-  const input = validateRoutineInput(rawInput);
+  const input = await validateRoutineInput(rawInput);
   const db = getDb();
   await db
     .update(routines)
@@ -271,6 +272,7 @@ export type RoutineScheduleCard = {
 // Lista liviana (sin sets/reps ni historial) para la vista de calendario semanal,
 // con las miniaturas de ejercicios para reconocer cada rutina de un vistazo.
 export async function listMyRoutinesSchedule(ownerId: string): Promise<RoutineScheduleCard[]> {
+  const getExerciseById = await getExerciseLookup();
   const db = getDb();
   const rows = await db
     .select({ id: routines.id, name: routines.name, scheduledDays: routines.scheduledDays })
@@ -358,7 +360,7 @@ async function getRoutineRow(routineId: string) {
   return routine ?? null;
 }
 
-function enrichBlockExercise(row: typeof routineBlockExercises.$inferSelect) {
+function enrichBlockExercise(row: typeof routineBlockExercises.$inferSelect, getExerciseById: Awaited<ReturnType<typeof getExerciseLookup>>) {
   const exercise = getExerciseById(row.exerciseId);
   return {
     id: row.id,
@@ -380,6 +382,7 @@ function enrichBlockExercise(row: typeof routineBlockExercises.$inferSelect) {
 }
 
 export async function getRoutineDetail(routineId: string) {
+  const getExerciseById = await getExerciseLookup();
   const db = getDb();
   const [routine] = await db
     .select({
@@ -420,7 +423,7 @@ export async function getRoutineDetail(routineId: string) {
   const exercisesByBlock = new Map<string, ReturnType<typeof enrichBlockExercise>[]>();
   for (const be of blockExercises) {
     const list = exercisesByBlock.get(be.blockId) ?? [];
-    list.push(enrichBlockExercise(be));
+    list.push(enrichBlockExercise(be, getExerciseById));
     exercisesByBlock.set(be.blockId, list);
   }
 
@@ -448,6 +451,7 @@ export type RoutineCard = {
 };
 
 export async function listMyRoutines(ownerId: string): Promise<RoutineCard[]> {
+  const getExerciseById = await getExerciseLookup();
   const db = getDb();
   const rows = await db
     .select({
@@ -654,6 +658,7 @@ async function getSessionRow(sessionId: string) {
 }
 
 async function getSessionExtraBlocks(sessionId: string) {
+  const getExerciseById = await getExerciseLookup();
   const db = getDb();
   const blocks = await db
     .select()
@@ -672,7 +677,7 @@ async function getSessionExtraBlocks(sessionId: string) {
   const exercisesByBlock = new Map<string, ReturnType<typeof enrichBlockExercise>[]>();
   for (const be of blockExercises) {
     const list = exercisesByBlock.get(be.blockId) ?? [];
-    list.push(enrichBlockExercise(be));
+    list.push(enrichBlockExercise(be, getExerciseById));
     exercisesByBlock.set(be.blockId, list);
   }
 
@@ -716,6 +721,7 @@ export async function addExtraExerciseToSession(
   exerciseId: string,
   plannedSets: number,
 ) {
+  const getExerciseById = await getExerciseLookup();
   const session = await getSessionRow(sessionId);
   if (!session) throw new ApiError(404, "Sesión no encontrada.");
   if (session.userId !== userId) throw new ApiError(403, "No es tu sesión.");

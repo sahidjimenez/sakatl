@@ -5,6 +5,8 @@ import {
   index,
   primaryKey,
   integer,
+  jsonb,
+  customType,
   numeric,
   pgEnum,
   pgTable,
@@ -14,6 +16,21 @@ import {
   uuid,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
+import type { ExerciseRecord } from "../exercises";
+
+export const customExercises = pgTable("custom_exercises", {
+  id: uuid("id").primaryKey(),
+  ownerId: text("owner_id").notNull().references(() => users.id),
+  record: jsonb("record").$type<ExerciseRecord>().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [check("custom_exercises_record_check", sql`jsonb_typeof(${table.record}) = 'object'`)]).enableRLS();
+
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => "bytea" });
+// Keep media separate so catalog searches never transfer the GIF contents.
+export const exerciseMedia = pgTable("exercise_media", {
+  exerciseId: uuid("exercise_id").primaryKey().references(() => customExercises.id, { onDelete: "cascade" }),
+  data: bytea("data").notNull(),
+}, (table) => [check("exercise_media_data_check", sql`octet_length(${table.data}) BETWEEN 1 AND 3145728`)]).enableRLS();
 
 export const blockTypeEnum = pgEnum("block_type", [
   "single",

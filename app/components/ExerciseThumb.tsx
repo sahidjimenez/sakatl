@@ -11,14 +11,19 @@ export function ExerciseDetailModal({
   onClose: () => void;
 }) {
   const [detail, setDetail] = useState<ExerciseDetail | null>(null);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/exercises/${exerciseId}`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("Exercise unavailable");
+        return res.json();
+      })
       .then((data) => {
         if (!cancelled) setDetail(data);
-      });
+      })
+      .catch(() => { if (!cancelled) setError(true); });
     return () => {
       cancelled = true;
     };
@@ -33,7 +38,9 @@ export function ExerciseDetailModal({
         className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-[#2a2f37] bg-[#1c2026] p-6"
         onClick={(e) => e.stopPropagation()}
       >
-        {!detail ? (
+        {error ? (
+          <div role="alert" className="text-[#9099a3]">No se pudo cargar el ejercicio. <button type="button" onClick={onClose} className="underline">Cerrar</button></div>
+        ) : !detail ? (
           <p className="text-[#9099a3]">Cargando…</p>
         ) : (
           <>
@@ -67,6 +74,7 @@ export function ExerciseDetailModal({
               </p>
             )}
 
+            {detail.instructions_es && <p className="mb-4 whitespace-pre-line text-sm leading-relaxed text-[#9099a3]">{detail.instructions_es}</p>}
             <ol className="list-decimal space-y-2 pl-5 text-sm leading-relaxed text-[#f1f3f4]">
               {detail.instruction_steps_es.map((step, i) => (
                 <li key={i}>{step}</li>

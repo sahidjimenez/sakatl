@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { CreateExerciseButton } from "@/app/components/CreateExerciseButton";
 import type { ExerciseSummary } from "@/lib/exercises";
 import { ExerciseDetailModal } from "@/app/components/ExerciseThumb";
 
@@ -34,6 +35,7 @@ export default function ExerciseLibrary({
   const [items, setItems] = useState<ExerciseSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const requestId = useRef(0);
@@ -42,12 +44,19 @@ export default function ExerciseLibrary({
     async (offset: number, append: boolean) => {
       const id = ++requestId.current;
       setLoading(true);
-      const res = await fetch(`/api/exercises?${buildQuery(q, category, equipment, offset)}`);
-      const data: SearchResponse = await res.json();
-      if (id !== requestId.current) return;
-      setTotal(data.total);
-      setItems((prev) => (append ? [...prev, ...data.items] : data.items));
-      setLoading(false);
+      setError("");
+      try {
+        const res = await fetch(`/api/exercises?${buildQuery(q, category, equipment, offset)}`);
+        if (!res.ok) throw new Error("Search failed");
+        const data: SearchResponse = await res.json();
+        if (id !== requestId.current) return;
+        setTotal(data.total);
+        setItems((prev) => (append ? [...prev, ...data.items] : data.items));
+      } catch {
+        if (id === requestId.current) setError("No se pudieron cargar los ejercicios. Intenta de nuevo.");
+      } finally {
+        if (id === requestId.current) setLoading(false);
+      }
     },
     [q, category, equipment],
   );
@@ -68,7 +77,8 @@ export default function ExerciseLibrary({
           <p className="mb-2 text-xs font-semibold tracking-wide text-[#9099a3] uppercase">
             Biblioteca de ejercicios
           </p>
-          <h1 className="text-3xl font-extrabold">Busca entre {total || "1,324"} ejercicios</h1>
+          <h1 className="text-3xl font-extrabold">Biblioteca de ejercicios</h1>
+          <CreateExerciseButton onCreated={(exercise) => { setSelectedId(exercise.id); void runSearch(0, false); }} />
           <p className="mt-2 max-w-[58ch] text-[15px] leading-relaxed text-[#9099a3]">
             Filtra por músculo, equipo o busca por nombre. Cada ejercicio incluye
             instrucciones y una animación de la técnica.
@@ -109,7 +119,8 @@ export default function ExerciseLibrary({
           </select>
         </div>
 
-        {!loading && items.length === 0 ? (
+        {error && <p role="alert" className="mb-5 text-sm text-red-400">{error} <button type="button" onClick={() => runSearch(0, false)} className="ml-2 underline">Reintentar</button></p>}
+        {!loading && !error && items.length === 0 ? (
           <p className="py-16 text-center text-[#9099a3]">
             No encontramos ejercicios con esos filtros.
           </p>

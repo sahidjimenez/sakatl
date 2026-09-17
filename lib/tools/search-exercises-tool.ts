@@ -10,7 +10,7 @@ export const searchExercisesTool = tool({
     equipment: z.string().optional().describe("Filtro de equipo exacto (ej. 'barbell', 'dumbbell', 'body weight')"),
   }),
   execute: async ({ q, equipment }) => {
-    const { items } = searchExercises({ q, equipment, limit: 8 });
+    const { items } = await searchExercises({ q, equipment, limit: 8 });
     return {
       items: items.map((ex) => ({
         exerciseId: ex.id,

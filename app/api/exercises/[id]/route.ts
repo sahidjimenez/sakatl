@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
-import { getExerciseById } from "@/lib/exercises";
+import { getExerciseLookup } from "@/lib/exercises";
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const exercise = getExerciseById(id);
+  const lookup = await getExerciseLookup();
+  const exercise = lookup(id);
   if (!exercise) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }

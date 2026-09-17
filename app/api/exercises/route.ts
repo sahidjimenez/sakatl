@@ -10,6 +10,6 @@ export async function GET(request: NextRequest) {
   const offset = Number(params.get("offset") ?? 0) || 0;
   const limit = Math.min(Number(params.get("limit") ?? 24) || 24, 60);
 
-  const result = searchExercises({ q, muscleGroup, category, equipment, offset, limit });
+  const result = await searchExercises({ q, muscleGroup, category, equipment, offset, limit });
   return NextResponse.json(result);
 }

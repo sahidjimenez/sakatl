@@ -1,6 +1,6 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { getExerciseById } from "@/lib/exercises";
+import { getExerciseLookup } from "@/lib/exercises";
 
 const blockExerciseSchema = z.object({
   exerciseId: z.string().describe("Id de ejercicio obtenido con searchExercises"),
@@ -31,6 +31,7 @@ export const proposeRoutineTool = tool({
       .max(50),
   }),
   execute: async (input) => {
+    const getExerciseById = await getExerciseLookup();
     const blocks = input.blocks.map((block) => ({
       ...block,
       exercises: block.exercises.map((ex) => {

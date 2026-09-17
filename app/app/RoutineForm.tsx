@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
+import { CreateExerciseButton } from "@/app/components/CreateExerciseButton";
 import { useRouter } from "next/navigation";
 import { MUSCLE_GROUPS, muscleGroupLabel } from "@/lib/exercise-muscles";
 import type { ExerciseSummary } from "@/lib/exercises";
@@ -477,6 +478,7 @@ function ExercisePicker({ onSelect }: { onSelect: (ex: ExerciseSummary) => void 
         placeholder="Buscar ejercicio o músculo…"
         className="min-h-[48px] w-full rounded-[10px] border border-[#2a2f37] bg-[#1c2026] px-4 text-base text-[#f1f3f4] placeholder:text-[#6b7280] focus:outline-none focus:ring-1 focus:ring-[#4ade80]"
       />
+      <CreateExerciseButton forRoutine onCreated={onSelect} />
       <label className="mt-3 block text-sm text-[#9099a3]">
         Grupo muscular
         <select

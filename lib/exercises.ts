@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { muscleGroupLabel, normalizeExerciseSearch } from "./exercise-muscles";
+import { loadCustomExercises } from "./custom-exercises";
 
 export type ExerciseRecord = {
   id: string;
@@ -66,8 +67,8 @@ function toSummary(ex: ExerciseRecord): ExerciseSummary {
   };
 }
 
-export function getFilterOptions() {
-  const exercises = loadExercises();
+export async function getFilterOptions() {
+  const exercises = [...await loadCustomExercises(), ...loadExercises()];
   const categories = new Set<string>();
   const equipments = new Set<string>();
   for (const ex of exercises) {
@@ -89,7 +90,7 @@ export type SearchParams = {
   limit?: number;
 };
 
-export function searchExercises({
+export async function searchExercises({
   muscleGroup = "",
   q = "",
   category = "",
@@ -97,7 +98,7 @@ export function searchExercises({
   offset = 0,
   limit = 24,
 }: SearchParams) {
-  const exercises = loadExercises();
+  const exercises = [...await loadCustomExercises(), ...loadExercises()];
   const needle = normalizeExerciseSearch(q);
 
   const filtered = exercises.filter((ex) => {
@@ -128,5 +129,19 @@ export function getExerciseById(id: string): ExerciseDetail | null {
     attribution: ex.attribution,
     instructions_es: ex.instructions.es,
     instruction_steps_es: ex.instruction_steps.es,
+  };
+}
+
+// One database read per operation; the returned lookup also resolves the bundled catalog.
+export async function getExerciseLookup() {
+  const custom = new Map((await loadCustomExercises()).map((ex) => [ex.id, ex]));
+  return (id: string): ExerciseDetail | null => {
+    const ex = custom.get(id);
+    if (!ex) return getExerciseById(id);
+    return {
+      ...toSummary(ex), secondary_muscles: ex.secondary_muscles,
+      gif_url: ex.gif_url, attribution: ex.attribution,
+      instructions_es: ex.instructions.es, instruction_steps_es: ex.instruction_steps.es,
+    };
   };
 }
