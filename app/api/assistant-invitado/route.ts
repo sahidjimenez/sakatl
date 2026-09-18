@@ -1,17 +1,17 @@
 import { createAgentUIStreamResponse } from "ai";
 import { assistantAgent } from "@/lib/agents/assistant-agent";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { billingEnabled } from "@/lib/billing/stripe";
+import { readAssistantMessages } from "@/lib/assistant-request";
+import { handleApiError } from "@/lib/routines";
 
-// Sin cuenta no hay identidad de usuario que limitar en el servidor: el límite
-// real de "1 rutina por semana" vive en localStorage (ver lib/guest/storage.ts,
-// getGuestAssistantCooldown/markGuestAssistantUsed). Este límite por IP es sólo
-// una red de seguridad contra abuso/costos, no la fuente de verdad del límite.
+export const maxDuration = 120;
+
+// Protección contra ráfagas de solicitudes; sin cupo semanal de IA.
 const RATE_LIMIT = 8;
 const RATE_LIMIT_WINDOW_MS = 60_000;
 
 export async function POST(request: Request) {
-  if (billingEnabled()) return Response.json({ error: "Crea una cuenta gratuita para probar el asistente. Tus rutinas manuales siguen disponibles como invitado." }, { status: 401 });
+  try {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
 
   const { allowed, retryAfterMs } = checkRateLimit(`assistant-invitado:${ip}`, RATE_LIMIT, RATE_LIMIT_WINDOW_MS);
@@ -30,10 +30,12 @@ export async function POST(request: Request) {
     );
   }
 
-  const { messages } = await request.json();
+  const messages = await readAssistantMessages(request);
 
-  return createAgentUIStreamResponse({
+  return await createAgentUIStreamResponse({
     agent: assistantAgent,
     uiMessages: messages,
+    onError: () => "No se pudo generar la rutina. Intenta de nuevo en un momento.",
   });
+  } catch (error) { return handleApiError(error); }
 }

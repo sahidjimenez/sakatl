@@ -162,7 +162,7 @@ export default async function Home() {
               <h3>Pruébalo sin cuenta</h3>
               <p>
                 El modo invitado guarda tu rutina en este navegador y te
-                deja pedirle una rutina a la IA una vez por semana, sin
+                deja pedirle rutinas a la IA sin cupos por ahora, sin
                 registrarte.
               </p>
             </div>

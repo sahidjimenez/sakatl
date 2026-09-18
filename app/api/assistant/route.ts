@@ -5,6 +5,9 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { after } from "next/server";
 import { consumeUsage, refundUsage } from "@/lib/billing/store";
 import { handleApiError } from "@/lib/routines";
+import { readAssistantMessages } from "@/lib/assistant-request";
+
+export const maxDuration = 120;
 
 const RATE_LIMIT = 15;
 const RATE_LIMIT_WINDOW_MS = 60_000;
@@ -32,12 +35,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const raw = await request.text();
-  if (raw.length > 32000) return Response.json({ error: "La conversación es demasiado larga. Inicia una nueva." }, { status: 413 });
-  let body;
-  try { body = JSON.parse(raw); } catch { return Response.json({ error: "Solicitud no válida." }, { status: 400 }); }
-  const messages = body.messages;
-  if (!Array.isArray(messages) || messages.length < 1 || messages.length > 24) return Response.json({ error: "Inicia una conversación nueva para continuar." }, { status: 400 });
+  const messages = await readAssistantMessages(request);
   reservation = await consumeUsage(userId, "assistant");
 
   return await createAgentUIStreamResponse({

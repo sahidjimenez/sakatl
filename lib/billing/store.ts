@@ -34,7 +34,8 @@ export async function assertRoutineCapacity(db: BillingDb, userId: string) {
   if (Number(result.rows[0].count) >= Number(result.rows[0].routine_limit)) throw new ApiError(403, "Alcanzaste las rutinas incluidas en Gratis. Conservas las que ya tienes; conoce Pro en Planes.");
 }
 export async function consumeUsage(userId: string, capability: "assistant" | "voice") {
-  if (!billingEnabled()) return null;
+  // AI is currently open to everyone, independently of paid routine storage.
+  if (process.env.AI_USAGE_LIMITS_ENABLED !== "true" || !billingEnabled()) return null;
   return getDb().transaction(async tx => {
     await lockAccount(tx, userId);
     const sub = await subscriptionFor(tx, userId);

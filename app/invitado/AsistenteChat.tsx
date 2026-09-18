@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
+import { prepareAssistantMessages } from "@/lib/assistant-history";
 import type { AssistantUIMessage } from "@/lib/agents/assistant-agent";
-import { getGuestAssistantCooldown, markGuestAssistantUsed, saveGuestRoutine } from "@/lib/guest/storage";
+import { saveGuestRoutine } from "@/lib/guest/storage";
 import { ExerciseThumb } from "@/app/components/ExerciseThumb";
 import { VoiceRecordButton } from "@/app/components/VoiceRecordButton";
 
@@ -30,12 +31,6 @@ function loadStoredMessages(): AssistantUIMessage[] {
 
 type ProposeRoutinePart = Extract<AssistantUIMessage["parts"][number], { type: "tool-proposeRoutine" }>;
 type ProposeRoutineOutputPart = Extract<ProposeRoutinePart, { state: "output-available" }>;
-
-function hasRoutineProposal(messages: AssistantUIMessage[]): boolean {
-  return messages.some((m) =>
-    m.parts.some((p) => p.type === "tool-proposeRoutine" && p.state === "output-available"),
-  );
-}
 
 function RoutineProposalCard({ part }: { part: ProposeRoutineOutputPart }) {
   const proposal = part.output;
@@ -148,16 +143,19 @@ function ChatText({ text, isUser }: { text: string; isUser: boolean }) {
 }
 
 function OptionsButtons({
+  question,
   options,
   onSelect,
   disabled,
 }: {
+  question?: string;
   options: string[];
   onSelect: (option: string) => void;
   disabled: boolean;
 }) {
   return (
     <div className="flex flex-wrap gap-2">
+      {question && <p className="w-full text-sm text-[#f1f3f4]">{question}</p>}
       {options.map((option, i) => (
         <button
           key={i}
@@ -176,20 +174,16 @@ function OptionsButtons({
 export function GuestAsistenteChat() {
   const [input, setInput] = useState("");
   const [initialMessages] = useState(loadStoredMessages);
-  const [cooldown, setCooldown] = useState({ locked: false, daysRemaining: 0 });
-  const markedRef = useRef(hasRoutineProposal(initialMessages));
-
-  useEffect(() => {
-    // El cooldown vive en localStorage: se lee tras montar para no desincronizar
-    // el HTML del servidor.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setCooldown(getGuestAssistantCooldown());
-  }, []);
-
-  const { messages, sendMessage, status, setMessages, error } = useChat<AssistantUIMessage>({
+  const { messages, sendMessage, status, setMessages, error, clearError } = useChat<AssistantUIMessage>({
     messages: initialMessages,
-    transport: new DefaultChatTransport({ api: "/api/assistant-invitado" }),
+    transport: new DefaultChatTransport({
+      api: "/api/assistant-invitado",
+      prepareSendMessagesRequest: ({ messages }) => ({
+        body: { messages: prepareAssistantMessages(messages) },
+      }),
+    }),
   });
+  const busy = status === "submitted" || status === "streaming";
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -198,19 +192,11 @@ export function GuestAsistenteChat() {
       setMessages(trimmed);
       return;
     }
-    if (trimmed.length > 0) {
-      window.localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(trimmed));
-    }
+    try {
+      if (trimmed.length > 0) window.localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(trimmed));
+      else window.localStorage.removeItem(CHAT_HISTORY_KEY);
+    } catch { /* The chat remains usable when browser storage is full. */ }
   }, [messages, setMessages]);
-
-  useEffect(() => {
-    if (markedRef.current) return;
-    if (!hasRoutineProposal(messages)) return;
-    markedRef.current = true;
-    markGuestAssistantUsed();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setCooldown(getGuestAssistantCooldown());
-  }, [messages]);
 
   useEffect(() => {
     const el = textareaRef.current;
@@ -219,35 +205,28 @@ export function GuestAsistenteChat() {
     el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
   }, [input]);
 
-  const locked = cooldown.locked;
 
   function handleSend(text: string) {
-    if (!text.trim() || status !== "ready" || locked) return;
+    if (!text.trim() || busy) return;
+    clearError();
     sendMessage({ text });
     setInput("");
   }
 
   return (
     <div className="flex flex-col gap-4">
-      {locked && (
-        <div className="rounded-2xl border border-[#4ade80]/40 bg-[#4ade80]/10 px-5 py-4 text-sm">
-          <p className="font-bold text-[#f1f3f4]">Ya usaste tu rutina con IA de esta semana</p>
-          <p className="mt-1 text-[#9099a3]">
-            Como invitado podés generar 1 rutina con IA por semana. Vuelve en {cooldown.daysRemaining} día
-            {cooldown.daysRemaining === 1 ? "" : "s"}, o{" "}
-            <Link href="/sign-up" className="font-semibold text-[#4ade80] hover:underline">
-              crea una cuenta gratis
-            </Link>{" "}
-            para chatear sin límites.
-          </p>
-        </div>
-      )}
-
+      <button type="button" disabled={busy} onClick={() => {
+        setMessages([]);
+        clearError();
+        setInput("");
+      }} className="self-end text-sm text-[#9099a3] hover:text-[#4ade80] disabled:opacity-60">
+        Nueva conversación
+      </button>
       <div className="flex flex-col gap-4">
-        {messages.length === 0 && !locked && (
+        {messages.length === 0 && (
           <p className="rounded-2xl border border-[#2a2f37] bg-[#1c2026] px-6 py-8 text-center text-[#9099a3]">
             Cuéntame tu objetivo (ej. &quot;quiero una rutina de 3 días para espalda y bíceps con
-            mancuernas&quot;) y te propongo una rutina. Como invitado tenés 1 rutina con IA por semana.
+            mancuernas&quot;) y te propongo una rutina. Por ahora puedes usar la IA sin cupos.
           </p>
         )}
         {messages.map((message) => (
@@ -260,7 +239,12 @@ export function GuestAsistenteChat() {
           >
             {message.parts.map((part, i) => {
               if (part.type === "text") {
+                if (message.role === "assistant" && message.parts.some(p =>
+                  p.type === "tool-proposeRoutine" && p.state === "output-available")) return null;
                 return <ChatText key={i} text={part.text} isUser={message.role === "user"} />;
+              }
+              if ("state" in part && part.state === "output-error") {
+                return <p key={i} role="alert" className="text-sm text-red-400">No se pudo completar este paso. Intenta de nuevo.</p>;
               }
               if (part.type === "tool-searchExercises" && part.state !== "output-available") {
                 return (
@@ -270,15 +254,21 @@ export function GuestAsistenteChat() {
                 );
               }
               if (part.type === "tool-proposeRoutine" && part.state === "output-available") {
-                return <RoutineProposalCard key={i} part={part} />;
+                return (
+                  <div key={i} className="flex flex-col gap-2">
+                    <RoutineProposalCard part={part} />
+                    <ChatText text="¿Quieres modificar algo?" isUser={false} />
+                  </div>
+                );
               }
               if (part.type === "tool-presentOptions" && part.state === "output-available") {
                 return (
                   <OptionsButtons
                     key={i}
+                    question={part.output.question}
                     options={part.output.options}
-                    disabled={status !== "ready" || locked}
-                    onSelect={handleSend}
+                    disabled={busy || message.id !== messages.at(-1)?.id}
+                    onSelect={(answer) => handleSend(part.output.question ? `${part.output.question} ${answer}` : answer)}
                   />
                 );
               }
@@ -314,24 +304,20 @@ export function GuestAsistenteChat() {
                 handleSend(input);
               }
             }}
-            disabled={status !== "ready" || locked}
+            disabled={busy}
             rows={1}
-            placeholder={
-              locked
-                ? "Ya generaste tu rutina de esta semana"
-                : "Ej: rutina de 3 días, piernas y espalda, con mancuernas (Shift+Enter para salto de línea)"
-            }
+            placeholder="Ej: rutina de 3 días, piernas y espalda, con mancuernas (Shift+Enter para salto de línea)"
             className="max-h-40 w-full resize-none bg-transparent text-sm text-[#f1f3f4] outline-none placeholder:text-[#6b7280] disabled:opacity-60"
           />
           <div className="mt-1 flex items-center justify-end gap-1">
             <VoiceRecordButton
               variant="plain"
               onTranscribed={(text) => setInput((prev) => (prev ? `${prev} ${text}` : text))}
-              disabled={status !== "ready" || locked}
+              disabled={busy}
             />
             <button
               type="submit"
-              disabled={status !== "ready" || locked}
+              disabled={busy}
               aria-label="Enviar"
               className="flex h-9 w-9 items-center justify-center rounded-full bg-[#22c55e] text-[#08150d] transition-opacity disabled:opacity-40"
             >

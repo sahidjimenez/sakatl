@@ -11,7 +11,7 @@ const RATE_LIMIT_WINDOW_MS = 60_000;
 
 export async function POST(request: Request) {
   let userId: string | null = null;
-  if (billingEnabled()) {
+  if (process.env.AI_USAGE_LIMITS_ENABLED === "true" && billingEnabled()) {
     try { userId = await requireUser(); } catch (error) { return handleApiError(error); }
   }
   if (Number(request.headers.get("content-length")) > 6_000_000) return Response.json({ error: "El audio es demasiado grande (máximo 5 MB)." }, { status: 413 });

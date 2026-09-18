@@ -6,8 +6,10 @@ export const presentOptionsTool = tool({
     "Cuando necesites que el usuario elija entre un puñado de opciones concretas (ej. objetivo: " +
     "fuerza, resistencia o acondicionamiento general), usa esta herramienta en vez de escribir las " +
     "opciones como texto plano. El usuario las va a ver como botones y al tocar una te va a llegar " +
-    "su texto como si lo hubiera escrito.",
+    "su texto como si lo hubiera escrito. Haz una sola pregunta y espera su respuesta antes de continuar.",
   inputSchema: z.object({
+    question: z.string().min(1).max(240).optional()
+      .describe("Pregunta concreta que debe responder el usuario. Inclúyela siempre; es opcional solo para compatibilidad con conversaciones anteriores."),
     options: z
       .array(z.string().min(1).max(80))
       .min(2)

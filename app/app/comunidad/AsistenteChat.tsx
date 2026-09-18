@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
+import { prepareAssistantMessages } from "@/lib/assistant-history";
 import type { AssistantUIMessage } from "@/lib/agents/assistant-agent";
 import { createRoutineAction, type FormActionResult } from "@/lib/actions/routines";
 import { ExerciseThumb } from "@/app/components/ExerciseThumb";
@@ -148,16 +149,19 @@ function ChatText({ text, isUser }: { text: string; isUser: boolean }) {
 }
 
 function OptionsButtons({
+  question,
   options,
   onSelect,
   disabled,
 }: {
+  question?: string;
   options: string[];
   onSelect: (option: string) => void;
   disabled: boolean;
 }) {
   return (
     <div className="flex flex-wrap gap-2">
+      {question && <p className="w-full text-sm text-[#f1f3f4]">{question}</p>}
       {options.map((option, i) => (
         <button
           key={i}
@@ -176,10 +180,16 @@ function OptionsButtons({
 export function AsistenteChat() {
   const [input, setInput] = useState("");
   const [initialMessages] = useState(loadStoredMessages);
-  const { messages, sendMessage, status, setMessages, error } = useChat<AssistantUIMessage>({
+  const { messages, sendMessage, status, setMessages, error, clearError } = useChat<AssistantUIMessage>({
     messages: initialMessages,
-    transport: new DefaultChatTransport({ api: "/api/assistant" }),
+    transport: new DefaultChatTransport({
+      api: "/api/assistant",
+      prepareSendMessagesRequest: ({ messages }) => ({
+        body: { messages: prepareAssistantMessages(messages) },
+      }),
+    }),
   });
+  const busy = status === "submitted" || status === "streaming";
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -188,9 +198,10 @@ export function AsistenteChat() {
       setMessages(trimmed);
       return;
     }
-    if (trimmed.length > 0) {
-      window.localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(trimmed));
-    }
+    try {
+      if (trimmed.length > 0) window.localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(trimmed));
+      else window.localStorage.removeItem(CHAT_HISTORY_KEY);
+    } catch { /* The chat remains usable when browser storage is full. */ }
   }, [messages, setMessages]);
 
   useEffect(() => {
@@ -201,13 +212,21 @@ export function AsistenteChat() {
   }, [input]);
 
   function handleSend(text: string) {
-    if (!text.trim() || status !== "ready") return;
+    if (!text.trim() || busy) return;
+    clearError();
     sendMessage({ text });
     setInput("");
   }
 
   return (
     <div className="flex flex-col gap-4">
+      <button type="button" disabled={busy} onClick={() => {
+        setMessages([]);
+        clearError();
+        setInput("");
+      }} className="self-end text-sm text-[#9099a3] hover:text-[#4ade80] disabled:opacity-60">
+        Nueva conversación
+      </button>
       <div className="flex flex-col gap-4">
         {messages.length === 0 && (
           <p className="rounded-2xl border border-[#2a2f37] bg-[#1c2026] px-6 py-8 text-center text-[#9099a3]">
@@ -225,7 +244,12 @@ export function AsistenteChat() {
           >
             {message.parts.map((part, i) => {
               if (part.type === "text") {
+                if (message.role === "assistant" && message.parts.some(p =>
+                  p.type === "tool-proposeRoutine" && p.state === "output-available")) return null;
                 return <ChatText key={i} text={part.text} isUser={message.role === "user"} />;
+              }
+              if ("state" in part && part.state === "output-error") {
+                return <p key={i} role="alert" className="text-sm text-red-400">No se pudo completar este paso. Intenta de nuevo.</p>;
               }
               if (part.type === "tool-searchExercises" && part.state !== "output-available") {
                 return (
@@ -235,15 +259,21 @@ export function AsistenteChat() {
                 );
               }
               if (part.type === "tool-proposeRoutine" && part.state === "output-available") {
-                return <RoutineProposalCard key={i} part={part} />;
+                return (
+                  <div key={i} className="flex flex-col gap-2">
+                    <RoutineProposalCard part={part} />
+                    <ChatText text="¿Quieres modificar algo?" isUser={false} />
+                  </div>
+                );
               }
               if (part.type === "tool-presentOptions" && part.state === "output-available") {
                 return (
                   <OptionsButtons
                     key={i}
+                    question={part.output.question}
                     options={part.output.options}
-                    disabled={status !== "ready"}
-                    onSelect={handleSend}
+                    disabled={busy || message.id !== messages.at(-1)?.id}
+                    onSelect={(answer) => handleSend(part.output.question ? `${part.output.question} ${answer}` : answer)}
                   />
                 );
               }
@@ -279,7 +309,7 @@ export function AsistenteChat() {
                 handleSend(input);
               }
             }}
-            disabled={status !== "ready"}
+            disabled={busy}
             rows={1}
             placeholder="Ej: rutina de 3 días, piernas y espalda, con mancuernas (Shift+Enter para salto de línea)"
             className="max-h-40 w-full resize-none bg-transparent text-sm text-[#f1f3f4] outline-none placeholder:text-[#6b7280]"
@@ -288,11 +318,11 @@ export function AsistenteChat() {
             <VoiceRecordButton
               variant="plain"
               onTranscribed={(text) => setInput((prev) => (prev ? `${prev} ${text}` : text))}
-              disabled={status !== "ready"}
+              disabled={busy}
             />
             <button
               type="submit"
-              disabled={status !== "ready"}
+              disabled={busy}
               aria-label="Enviar"
               className="flex h-9 w-9 items-center justify-center rounded-full bg-[#22c55e] text-[#08150d] transition-opacity disabled:opacity-40"
             >
