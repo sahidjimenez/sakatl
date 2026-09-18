@@ -88,15 +88,17 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
             <h1 className="text-2xl font-extrabold md:text-3xl">
               {session.completedAt ? "Sesión completada" : "Entrenando"}
             </h1>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <PersistentSessionTimer sessionId={session.id} initial={session.clock} />
               {session.completedAt ? (
                 <form action={reopenSessionAction.bind(null, session.id)}>
                   <button
                     type="submit"
-                    className="min-h-[44px] rounded-[10px] border border-[#2a2f37] px-5 text-sm font-bold text-[#f1f3f4] hover:border-[#4ade80]"
+                    aria-label="Continuar entrenamiento"
+                    title="Continuar entrenamiento"
+                    className="flex h-11 w-11 items-center justify-center rounded-full border border-[#2a2f37] text-[#4ade80] hover:border-[#4ade80]"
                   >
-                    Continuar entrenamiento
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5"><path d="M8 5v14l11-7Z" /></svg>
                   </button>
                 </form>
               ) : (
