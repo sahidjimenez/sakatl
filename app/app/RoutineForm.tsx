@@ -1,5 +1,6 @@
 "use client";
 
+import { WeightInput, useWeightUnit } from "@/app/components/WeightInput";
 import { useEffect, useId, useState } from "react";
 import { CreateExerciseButton } from "@/app/components/CreateExerciseButton";
 import { useRouter } from "next/navigation";
@@ -333,7 +334,8 @@ function ExerciseSlotEditor({
   slot: ExerciseSlot;
   onChange: (patch: Partial<ExerciseSlot>) => void;
 }) {
-  const inputId = useId();
+  const inputId = useId();
+  const [unit, setUnit] = useWeightUnit(slot.exerciseId ?? "unselected");
 
   if (!slot.exerciseId) {
     return (
@@ -404,20 +406,16 @@ function ExerciseSlotEditor({
             className="min-h-[48px] rounded-[10px] border border-[#2a2f37] bg-[#1c2026] px-3.5 text-base text-[#f1f3f4]"
           />
         </label>
-        <label className="flex flex-col gap-1.5 text-sm font-semibold text-[#9099a3]" htmlFor={`${inputId}-weight`}>
-          Peso (kg)
-          <input
-            id={`${inputId}-weight`}
-            type="number"
-            min={0}
-            step="0.5"
-            value={slot.targetWeight ?? ""}
-            onChange={(e) =>
-              onChange({ targetWeight: e.target.value ? Number(e.target.value) : null })
-            }
-            className="min-h-[48px] rounded-[10px] border border-[#2a2f37] bg-[#1c2026] px-3.5 text-base text-[#f1f3f4]"
-          />
-        </label>
+        <div className="flex flex-col gap-1.5 text-sm font-semibold text-[#9099a3]">
+          <label htmlFor={`${inputId}-weight`}>Peso</label>
+          <WeightInput
+            id={`${inputId}-weight`}
+            value={slot.targetWeight}
+            onChange={(targetWeight) => onChange({ targetWeight })}
+            unit={unit}
+            onUnitChange={setUnit}
+          />
+        </div>
       </div>
     </div>
   );

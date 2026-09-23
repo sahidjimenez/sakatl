@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
-import { MUSCLE_GROUPS } from "@/lib/exercise-muscles";
+import { useEffect, useId, useRef, useState } from "react";
+import { ExerciseVideoPreview } from "@/app/components/ExerciseVideoPreview";
+import { parseExerciseVideo } from "@/lib/exercise-video";
+import { ASSISTING_MUSCLES, MUSCLE_GROUPS, assistingMuscleLabel, canAssist } from "@/lib/exercise-muscles";
 import type { ExerciseRecord, ExerciseSummary } from "@/lib/exercises";
 
 const fieldClass = "mt-2 min-h-12 w-full rounded-xl border border-[#2a2f37] bg-[#1c2026] px-4 py-3 text-[#f1f3f4] focus:outline-none focus:ring-2 focus:ring-[#4ade80]";
@@ -12,6 +14,12 @@ export default function NewExerciseForm({ onCreated, onSavingChange, initialExer
   onCreated?: (exercise: ExerciseSummary) => void;
   onSavingChange?: (saving: boolean) => void;
 }) {
+  const assistantsId = useId();
+  const [muscleGroup, setMuscleGroup] = useState(initialExercise?.category ?? "");
+  const [assistingMuscles, setAssistingMuscles] = useState<string[]>(initialExercise?.secondary_muscles.map(assistingMuscleLabel) ?? []);
+  const [assistantsOpen, setAssistantsOpen] = useState(false);
+  const [videoUrl, setVideoUrl] = useState(initialExercise?.video_url ?? "");
+  const video = parseExerciseVideo(videoUrl);
   const [files, setFiles] = useState<File[]>([]);
   const [gif, setGif] = useState<Blob | null>(null);
   const [preview, setPreview] = useState("");
@@ -43,11 +51,12 @@ export default function NewExerciseForm({ onCreated, onSavingChange, initialExer
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     event.stopPropagation();
-    if ((!gif && !initialExercise) || (files.length > 0 && !gif) || saving || converting) return;
+    if ((!gif && !initialExercise && !video) || (files.length > 0 && !gif) || saving || converting) return;
     const fields = new FormData(event.currentTarget);
     const payload = new FormData();
     payload.set("exercise", JSON.stringify({
       name: fields.get("name"), description: fields.get("description"),
+      assistingMuscles, videoUrl: video?.url ?? videoUrl.trim(),
       muscleGroup: fields.get("muscleGroup"), equipment: fields.get("equipment"),
       steps: String(fields.get("steps")).split("\n").map((step) => step.trim()).filter(Boolean),
     }));
@@ -74,12 +83,27 @@ export default function NewExerciseForm({ onCreated, onSavingChange, initialExer
     <fieldset disabled={saving} className="space-y-5 disabled:opacity-70">
       <label className="block text-sm font-semibold">Nombre del ejercicio<input name="name" defaultValue={initialExercise?.name} required minLength={2} maxLength={120} placeholder="Ej. Sentadilla con banda" className={fieldClass} /></label>
       <label className="block text-sm font-semibold">Descripción<textarea name="description" defaultValue={initialExercise?.instructions.es} required minLength={10} maxLength={2000} rows={3} placeholder="Explica en qué consiste el ejercicio." className={fieldClass} /></label>
-      <div className="grid gap-5 sm:grid-cols-2">
-        <label className="block text-sm font-semibold">Grupo muscular<select name="muscleGroup" required defaultValue={initialExercise?.category ?? ""} className={fieldClass}><option value="" disabled>Selecciona un grupo</option>{MUSCLE_GROUPS.map((group) => <option key={group.label}>{group.label}</option>)}</select></label>
-        <label className="block text-sm font-semibold">Equipo<input name="equipment" defaultValue={initialExercise?.equipment} required maxLength={80} placeholder="Ej. Mancuernas o sin equipo" className={fieldClass} /></label>
+        <label className="block text-sm font-semibold">Grupo muscular<select name="muscleGroup" required value={muscleGroup} onChange={(event) => { setMuscleGroup(event.target.value); setAssistingMuscles(previous => previous.filter(group => canAssist(group, event.target.value))); setAssistantsOpen(false); }} className={fieldClass}><option value="" disabled>Selecciona un grupo</option>{MUSCLE_GROUPS.map((group) => <option key={group.label}>{group.label}</option>)}</select></label>
+
+      <div>
+        <p id={assistantsId} className="text-sm font-semibold">Músculos que asisten <span className="font-normal text-[#9099a3]">(opcional)</span></p>
+        <button type="button" disabled={!muscleGroup} aria-labelledby={assistantsId} aria-expanded={assistantsOpen} aria-controls={`${assistantsId}-options`}
+          onClick={() => setAssistantsOpen(open => !open)} className={`${fieldClass} flex items-center justify-between gap-2 text-left disabled:opacity-40`}>
+          <span>{assistingMuscles.length ? assistingMuscles.join(", ") : "Selecciona uno o varios"}</span><span aria-hidden="true">⌄</span>
+        </button>
+        {!muscleGroup && <p className="mt-1 text-xs text-[#9099a3]">Primero selecciona el grupo muscular principal.</p>}
+        {muscleGroup && assistantsOpen && <fieldset id={`${assistantsId}-options`} aria-labelledby={assistantsId} className="mt-2 grid max-h-64 gap-1 overflow-y-auto rounded-xl border border-[#2a2f37] bg-[#1c2026] p-3 sm:grid-cols-2">
+          {ASSISTING_MUSCLES.filter(group => canAssist(group.label, muscleGroup)).map(group => (
+            <label key={group.label} className="flex min-h-11 items-center gap-3 px-2 text-sm">
+              <input type="checkbox" checked={assistingMuscles.includes(group.label)} onChange={event => setAssistingMuscles(previous => event.target.checked ? [...previous, group.label] : previous.filter(value => value !== group.label))} className="h-4 w-4 accent-[#4ade80]" />
+              {group.label}
+            </label>
+          ))}
+        </fieldset>}
       </div>
+      <label className="block text-sm font-semibold">Equipo<input name="equipment" defaultValue={initialExercise?.equipment} required maxLength={80} placeholder="Ej. Mancuernas o sin equipo" className={fieldClass} /></label>
       <label className="block text-sm font-semibold">Cómo hacerlo<textarea name="steps" defaultValue={initialExercise?.instruction_steps.es.join("\n")} required maxLength={7500} rows={5} placeholder={"Colócate en la posición inicial.\nRealiza el movimiento.\nVuelve a la posición inicial."} className={fieldClass} /><span className="mt-1 block font-normal text-[#9099a3]">Un paso por línea, hasta 15 pasos de 500 caracteres.</span></label>
-      {initialExercise && !preview && <div>
+      {initialExercise?.gif_url && !preview && <div>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={`/exercises/${initialExercise.gif_url}`} alt={`GIF actual de ${initialExercise.name}`} className="mx-auto aspect-square w-full max-w-64 rounded-xl" />
         <p className="mt-2 text-sm text-[#9099a3]">Puedes conservar el GIF actual o generar uno nuevo.</p>
@@ -98,9 +122,18 @@ export default function NewExerciseForm({ onCreated, onSavingChange, initialExer
           <p className="mt-2 text-center text-xs text-[#9099a3]">GIF listo · {(gif.size / 1024 / 1024).toFixed(2)} MB</p>
         </div>}
       </section>
+      <div className="space-y-3">
+        <label className="block text-sm font-semibold">Enlace de video (opcional)
+          <input type="url" name="videoUrl" value={videoUrl} maxLength={2048} onChange={event => setVideoUrl(event.target.value)} placeholder="https://www.youtube.com/watch?v=…" className={fieldClass} />
+        </label>
+        <p className="text-xs text-[#9099a3]">Pega el enlace completo de un video público de YouTube, Instagram o TikTok. Puedes usarlo en lugar de subir archivos.</p>
+        {videoUrl.trim() && !video && <p role="alert" className="text-sm text-amber-300">Usa el enlace completo del video; no un perfil ni un enlace acortado de TikTok.</p>}
+        {video && <ExerciseVideoPreview url={video.url} />}
+      </div>
+
       <label className="flex items-start gap-3 text-sm text-[#9099a3]"><input required defaultChecked={Boolean(initialExercise)} type="checkbox" className="mt-1 accent-[#4ade80]" />Tengo permiso para compartir este contenido y entiendo que será visible para toda la comunidad.</label>
       {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
-      <button type="submit" disabled={(!gif && !initialExercise) || (files.length > 0 && !gif) || converting || saving} className="min-h-12 w-full rounded-xl bg-[#4ade80] px-5 font-bold text-[#0d0f12] disabled:opacity-40">{saving ? "Guardando ejercicio…" : initialExercise ? "Guardar cambios" : "Publicar ejercicio"}</button>
+      <button type="submit" disabled={(!gif && !initialExercise && !video) || (files.length > 0 && !gif) || converting || saving || Boolean(videoUrl.trim() && !video)} className="min-h-12 w-full rounded-xl bg-[#4ade80] px-5 font-bold text-[#0d0f12] disabled:opacity-40">{saving ? "Guardando ejercicio…" : initialExercise ? "Guardar cambios" : "Publicar ejercicio"}</button>
     </fieldset>
   </form>;
 }

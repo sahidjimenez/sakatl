@@ -1,5 +1,6 @@
 "use client";
 
+import { WeightDisplay } from "@/app/components/WeightDisplay";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ExerciseThumb } from "@/app/components/ExerciseThumb";
@@ -110,7 +111,7 @@ export function RoutineDetailModal({
                             {ex.plannedSets} series
                             {(ex.targetRepsMin || ex.targetRepsMax) &&
                               ` · ${ex.targetRepsMin ?? "?"}-${ex.targetRepsMax ?? "?"} reps`}
-                            {ex.targetWeight != null && ` · ${ex.targetWeight} kg`}
+                            {ex.targetWeight != null && <> · <WeightDisplay exerciseId={ex.exerciseId} value={ex.targetWeight} /></>}
                           </p>
                         </div>
                       </div>

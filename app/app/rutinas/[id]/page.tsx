@@ -1,3 +1,4 @@
+import { WeightDisplay } from "@/app/components/WeightDisplay";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
@@ -136,7 +137,7 @@ export default async function RoutineDetailPage({
                         {ex.plannedSets} series
                         {(ex.targetRepsMin || ex.targetRepsMax) &&
                           ` · ${ex.targetRepsMin ?? "?"}-${ex.targetRepsMax ?? "?"} reps`}
-                        {ex.targetWeight != null && ` · ${ex.targetWeight} kg`}
+                        {ex.targetWeight != null && <> · <WeightDisplay exerciseId={ex.exerciseId} value={ex.targetWeight} /></>}
                       </p>
                     </div>
                     <PersonalExerciseNote exerciseId={ex.exerciseId} name={ex.exercise?.name ?? ex.exerciseId} note={personalNotes[ex.exerciseId] ?? ""} />

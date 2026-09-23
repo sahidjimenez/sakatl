@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ExerciseVideoPreview } from "@/app/components/ExerciseVideoPreview";
+import { assistingMuscleLabel } from "@/lib/exercise-muscles";
 import type { ExerciseDetail } from "@/lib/exercises";
 
 export function ExerciseDetailModal({
@@ -59,18 +61,20 @@ export function ExerciseDetailModal({
               </button>
             </div>
 
-            <div className="mb-4 overflow-hidden rounded-xl bg-[#0d0f12]">
+            {detail.gif_url && <div className="mb-4 overflow-hidden rounded-xl bg-[#0d0f12]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={`/exercises/${detail.gif_url}`}
                 alt={`Animación de ${detail.name}`}
                 className="w-full"
               />
-            </div>
+            </div>}
+
+            {detail.video_url && <ExerciseVideoPreview url={detail.video_url} />}
 
             {detail.secondary_muscles.length > 0 && (
               <p className="mb-4 text-xs text-[#9099a3]">
-                Músculos secundarios: {detail.secondary_muscles.join(", ")}
+                Músculos que asisten: {detail.secondary_muscles.map(assistingMuscleLabel).join(", ")}
               </p>
             )}
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { WeightDisplay } from "@/app/components/WeightDisplay";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -118,7 +119,7 @@ export default function InvitadoRutinaDetailPage() {
                         {ex.plannedSets} series
                         {(ex.targetRepsMin || ex.targetRepsMax) &&
                           ` · ${ex.targetRepsMin ?? "?"}-${ex.targetRepsMax ?? "?"} reps`}
-                        {ex.targetWeight != null && ` · ${ex.targetWeight} kg`}
+                        {ex.targetWeight != null && <> · <WeightDisplay exerciseId={ex.exerciseId} value={ex.targetWeight} /></>}
                       </p>
                     </div>
                   </div>

@@ -1,5 +1,7 @@
 "use client";
 
+import { WeightInput, useWeightUnit } from "@/app/components/WeightInput";
+import { formatWeight } from "@/lib/weight-units";
 import { useRef, useState, useTransition } from "react";
 import { startRestTimer } from "@/app/components/RestTimer";
 import { SetMarkButton } from "@/app/components/SetMarkButton";
@@ -23,6 +25,7 @@ function PencilIcon({ className }: { className?: string }) {
 
 export function SetRow({
   blockExerciseId,
+  exerciseId,
   setNumber,
   weight,
   reps,
@@ -35,6 +38,7 @@ export function SetRow({
   onUndo,
 }: {
   blockExerciseId: string;
+  exerciseId: string;
   setNumber: number;
   weight: number | null;
   reps: number | null;
@@ -67,7 +71,8 @@ export function SetRow({
   } | null>(null);
   const [, startTransition] = useTransition();
 
-  const weightRef = useRef<HTMLInputElement>(null);
+  const [unit] = useWeightUnit(exerciseId);
+  const [draftWeight, setDraftWeight] = useState<number | null | undefined>(undefined);
   const repsRef = useRef<HTMLInputElement>(null);
   const completion = useSessionCompletion();
   const key = `${blockExerciseId}-${setNumber}`;
@@ -88,9 +93,9 @@ export function SetRow({
       const formData = new FormData();
       formData.set("blockExerciseId", blockExerciseId);
       formData.set("setNumber", String(setNumber));
-      const weightVal = overrideWeight !== undefined ? overrideWeight : weightRef.current?.value;
+      const weightVal = overrideWeight !== undefined ? overrideWeight : (draftWeight !== undefined ? draftWeight : displayWeight);
       const repsVal = overrideReps !== undefined ? overrideReps : repsRef.current?.value;
-      if (weightVal != null && weightVal !== "") formData.set("weight", String(weightVal));
+      if (weightVal != null) formData.set("weight", String(weightVal));
       if (repsVal != null && repsVal !== "") formData.set("reps", String(repsVal));
       await logSetAction(formData);
     });
@@ -115,7 +120,7 @@ export function SetRow({
           className="min-h-[44px] flex-1 rounded-[10px] border border-dashed border-[#2a2f37] bg-[#1c2026] text-sm font-bold text-[#9099a3] transition-colors duration-75 hover:border-[#4ade80] hover:text-[#4ade80]"
         >
           Copiar todo del set anterior
-          {prevWeight != null && prevReps != null ? ` (${prevWeight}kg × ${prevReps})` : ""}
+          {prevWeight != null && prevReps != null ? ` (${formatWeight(prevWeight, unit)} ${unit} × ${prevReps})` : ""}
         </button>
         <button
           type="button"
@@ -136,15 +141,12 @@ export function SetRow({
         <span className="hidden sm:inline">Set </span>
         {setNumber}
       </span>
-      <input
-        ref={weightRef}
-        type="number"
-        name="weight"
-        step="0.5"
-        min={0}
-        placeholder={targetWeight != null ? String(targetWeight) : "kg"}
-        defaultValue={displayWeight ?? undefined}
-        className="min-h-[48px] w-16 min-w-0 flex-1 rounded-[10px] border border-[#2a2f37] bg-[#1c2026] px-2.5 text-base text-[#f1f3f4] placeholder:text-[#6b7280] focus:outline-none focus:ring-1 focus:ring-[#4ade80] sm:w-24 sm:flex-none sm:px-3.5"
+      <WeightInput
+        value={draftWeight !== undefined ? draftWeight : displayWeight}
+        onChange={setDraftWeight}
+        unit={unit}
+        targetWeight={targetWeight}
+        className="w-28 flex-1 sm:w-36 sm:flex-none"
       />
       <input
         ref={repsRef}

@@ -7,7 +7,7 @@ import { getDb } from "@/lib/db";
 import { customExercises, exerciseMedia } from "@/lib/db/schema";
 import { customExercisesEnabled } from "@/lib/custom-exercises";
 import { exerciseInput, MAX_GIF_BYTES } from "@/lib/exercise-input";
-import { MUSCLE_GROUPS } from "@/lib/exercise-muscles";
+import { ASSISTING_MUSCLES, MUSCLE_GROUPS } from "@/lib/exercise-muscles";
 import { checkRateLimit } from "@/lib/rate-limit";
 import type { ExerciseRecord } from "@/lib/exercises";
 
@@ -26,17 +26,21 @@ export async function POST(request: Request) {
     let parsed;
     try { parsed = exerciseInput.safeParse(JSON.parse(typeof raw === "string" ? raw : "{}")); }
     catch { throw new ApiError(400, "Los datos del ejercicio no son válidos."); }
-    if (!parsed.success) throw new ApiError(400, "Revisa el nombre, descripción, músculo, equipo y pasos del ejercicio.");
+    if (!parsed.success) throw new ApiError(400, parsed.error.issues[0]?.message ?? "Revisa los datos del ejercicio.");
     const file = form.get("gif");
-    if (!(file instanceof File) || file.type !== "image/gif" || !file.size || file.size > MAX_GIF_BYTES) {
-      throw new ApiError(400, "Sube un GIF válido de hasta 3 MB.");
+    if (!file && !parsed.data.videoUrl) throw new ApiError(400, "Agrega un video por enlace o sube un GIF.");
+    let bytes: Buffer | undefined;
+    if (file) {
+      if (!(file instanceof File) || file.type !== "image/gif" || !file.size || file.size > MAX_GIF_BYTES) {
+        throw new ApiError(400, "Sube un GIF válido de hasta 3 MB.");
+      }
+      bytes = Buffer.from(await file.arrayBuffer());
+      try {
+        const metadata = await sharp(bytes, { animated: true, limitInputPixels: 480 * 480 * 100 }).metadata();
+        if (metadata.format !== "gif" || !metadata.width || metadata.width > 480 || (metadata.pageHeight ?? metadata.height ?? 0) > 480 || (metadata.pages ?? 1) > 100) throw new Error("Invalid GIF");
+        await sharp(bytes, { animated: true, limitInputPixels: 480 * 480 * 100 }).stats();
+      } catch { throw new ApiError(400, "El GIF es inválido o supera 480 px y 100 cuadros. Genera la vista previa de nuevo."); }
     }
-    const bytes = Buffer.from(await file.arrayBuffer());
-    try {
-      const metadata = await sharp(bytes, { animated: true, limitInputPixels: 480 * 480 * 100 }).metadata();
-      if (metadata.format !== "gif" || !metadata.width || metadata.width > 480 || (metadata.pageHeight ?? metadata.height ?? 0) > 480 || (metadata.pages ?? 1) > 100) throw new Error("Invalid GIF");
-      await sharp(bytes, { animated: true, limitInputPixels: 480 * 480 * 100 }).stats();
-    } catch { throw new ApiError(400, "El GIF es inválido o supera 480 px y 100 cuadros. Genera la vista previa de nuevo."); }
     const id = randomUUID();
     const path = `${id}.gif`;
     const input = parsed.data;
@@ -45,13 +49,14 @@ export async function POST(request: Request) {
       id, name: input.name, category: input.muscleGroup, body_part: muscle,
       equipment: input.equipment, instructions: { es: input.description },
       instruction_steps: { es: input.steps }, muscle_group: muscle,
-      secondary_muscles: [], target: muscle, media_id: id,
-      image: `custom/${path}`, gif_url: `custom/${path}`,
+      video_url: input.videoUrl,
+      secondary_muscles: input.assistingMuscles.map(label => ASSISTING_MUSCLES.find(muscle => muscle.label === label)!.value), target: muscle, media_id: id,
+      image: bytes ? `custom/${path}` : "video-placeholder.svg", gif_url: bytes ? `custom/${path}` : "",
       attribution: "Ejercicio compartido por la comunidad de Sakatl.", created_at: new Date().toISOString(),
     };
     await getDb().transaction(async (tx) => {
       await tx.insert(customExercises).values({ id, ownerId, record });
-      await tx.insert(exerciseMedia).values({ exerciseId: id, data: bytes });
+      if (bytes) await tx.insert(exerciseMedia).values({ exerciseId: id, data: bytes });
     });
     return NextResponse.json({ id, exercise: {
       id, name: record.name, category: record.category, equipment: record.equipment,

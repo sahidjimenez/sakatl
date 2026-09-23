@@ -17,6 +17,7 @@ export type ExerciseRecord = {
   media_id: string;
   image: string;
   gif_url: string;
+  video_url?: string;
   attribution: string;
   created_at: string;
   deleted_at?: string;
@@ -33,6 +34,7 @@ export type ExerciseSummary = {
 };
 
 export type ExerciseDetail = ExerciseSummary & {
+  video_url?: string;
   secondary_muscles: string[];
   gif_url: string;
   attribution: string;
@@ -127,6 +129,7 @@ export function getExerciseById(id: string): ExerciseDetail | null {
     ...toSummary(ex),
     secondary_muscles: ex.secondary_muscles,
     gif_url: ex.gif_url,
+    video_url: ex.video_url,
     attribution: ex.attribution,
     instructions_es: ex.instructions.es,
     instruction_steps_es: ex.instruction_steps.es,
@@ -141,7 +144,7 @@ export async function getExerciseLookup() {
     if (!ex) return getExerciseById(id);
     return {
       ...toSummary(ex), secondary_muscles: ex.secondary_muscles,
-      gif_url: ex.gif_url, attribution: ex.attribution,
+      gif_url: ex.gif_url, video_url: ex.video_url, attribution: ex.attribution,
       instructions_es: ex.instructions.es, instruction_steps_es: ex.instruction_steps.es,
     };
   };

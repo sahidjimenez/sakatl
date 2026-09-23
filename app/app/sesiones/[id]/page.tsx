@@ -15,6 +15,7 @@ import {
 } from "@/lib/actions/routines";
 import { ExerciseThumb } from "@/app/components/ExerciseThumb";
 import { RestTimer } from "@/app/components/RestTimer";
+import { ExerciseWeightUnitSelector } from "@/app/components/WeightInput";
 import { SetRow } from "@/app/components/SetRow";
 import { PersistentSessionTimer } from "@/app/components/PersistentSessionTimer";
 import { SessionNotesModal } from "@/app/components/SessionNotesModal";
@@ -148,34 +149,49 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
         </div>
 
         <div className="flex flex-col gap-4">
-          {blocksWithMeta.map(({ block, label, totalSets, completedSets }) => (
+          {blocksWithMeta.map(({ block, label, totalSets, completedSets }, blockIndex) => (
             <CollapsibleBlock
-              key={block.id}
+              key={`${session.id}-${block.id}`}
               label={label}
               progressLabel={`${completedSets}/${totalSets}`}
-              defaultOpen={completedSets < totalSets}
+              defaultOpen={blockIndex === 0}
+              exercises={block.exercises.map((ex) => ({
+                id: ex.id,
+                exerciseId: ex.exerciseId,
+                name: ex.exercise?.name ?? ex.exerciseId,
+                image: ex.exercise?.image ?? null,
+              }))}
             >
               <>
                 {block.exercises.map((ex) => (
                   <div key={ex.id}>
-                    <div className="mb-2 flex items-center gap-3">
-                      {ex.exercise?.image && (
-                        <ExerciseThumb
-                          exerciseId={ex.exerciseId}
-                          image={ex.exercise.image}
-                          name={ex.exercise.name}
-                          imgClassName="h-10 w-10 rounded-lg object-cover"
-                        />
-                      )}
-                      <p className="flex-1 text-sm font-semibold text-[#f1f3f4]">
-                        {ex.exercise?.name ?? ex.exerciseId}
+                    {block.exercises.length > 1 && (
+                      <div className="mb-2 flex items-center gap-3">
+                        {ex.exercise?.image && (
+                          <ExerciseThumb
+                            exerciseId={ex.exerciseId}
+                            image={ex.exercise.image}
+                            name={ex.exercise?.name ?? ex.exerciseId}
+                            imgClassName="h-10 w-10 rounded-lg object-cover"
+                          />
+                        )}
+                        <p className="min-w-0 flex-1 text-sm font-semibold text-[#f1f3f4]">
+                          {ex.exercise?.name ?? ex.exerciseId}
+                        </p>
+                      </div>
+                    )}
+                    <div className="mb-3 flex items-center justify-between gap-2">
+                      <div className="min-w-0 flex-1">
                         {(ex.targetRepsMin || ex.targetRepsMax) && (
-                          <span className="ml-2 text-xs font-normal text-[#9099a3]">
+                          <span className="text-xs text-[#9099a3]">
                             objetivo: {ex.targetRepsMin ?? "?"}-{ex.targetRepsMax ?? "?"} reps
                           </span>
                         )}
-                      </p>
-                      <PersonalExerciseNote exerciseId={ex.exerciseId} name={ex.exercise?.name ?? ex.exerciseId} note={personalNotes[ex.exerciseId] ?? ""} />
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <ExerciseWeightUnitSelector exerciseId={ex.exerciseId} />
+                        <PersonalExerciseNote exerciseId={ex.exerciseId} name={ex.exercise?.name ?? ex.exerciseId} note={personalNotes[ex.exerciseId] ?? ""} />
+                      </div>
                     </div>
                     <div className="flex flex-col gap-2">
                       {Array.from({ length: ex.plannedSets }, (_, setIdx) => {
@@ -186,6 +202,7 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
                         return (
                           <SetRow
                             key={setNumber}
+                            exerciseId={ex.exerciseId}
                             blockExerciseId={ex.id}
                             setNumber={setNumber}
                             weight={log?.weight ?? null}
