@@ -3,6 +3,36 @@ import { getDb } from "./db";
 import { routineBlockExercises, setLogs, workoutSessions } from "./db/schema";
 import { getExerciseLookup } from "./exercises";
 import { startOfWeekUTC } from "./routines";
+import type { ExerciseProgress } from "./exercise-progress";
+
+export async function getExerciseProgress(userId: string): Promise<ExerciseProgress[]> {
+  const [lookup, rows] = await Promise.all([
+    getExerciseLookup(),
+    getDb().select({
+      exerciseId: routineBlockExercises.exerciseId,
+      sessionId: workoutSessions.id,
+      date: workoutSessions.startedAt,
+      maxWeight: sql<string | null>`max(${setLogs.weight})`,
+      volume: sql<string>`coalesce(sum(${setLogs.weight} * ${setLogs.reps}), 0)`,
+    }).from(setLogs)
+      .innerJoin(workoutSessions, eq(workoutSessions.id, setLogs.sessionId))
+      .innerJoin(routineBlockExercises, eq(routineBlockExercises.id, setLogs.blockExerciseId))
+      .where(and(eq(workoutSessions.userId, userId), eq(setLogs.completed, true)))
+      .groupBy(routineBlockExercises.exerciseId, workoutSessions.id, workoutSessions.startedAt)
+      .orderBy(workoutSessions.startedAt, workoutSessions.id),
+  ]);
+  const exercises = new Map<string, ExerciseProgress>();
+  for (const row of rows) {
+    let progress = exercises.get(row.exerciseId);
+    if (!progress) {
+      const exercise = lookup(row.exerciseId);
+      progress = { exerciseId: row.exerciseId, name: exercise?.name ?? "Ejercicio no disponible", image: exercise?.image ?? "", sessions: [] };
+      exercises.set(row.exerciseId, progress);
+    }
+    progress.sessions.push({ sessionId: row.sessionId, date: row.date.toISOString(), maxWeight: row.maxWeight === null ? null : Number(row.maxWeight), volume: Number(row.volume) });
+  }
+  return [...exercises.values()].sort((a, b) => a.name.localeCompare(b.name, "es"));
+}
 
 export type WeeklyVolumePoint = {
   weekStart: string;

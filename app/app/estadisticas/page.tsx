@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import { requireUser } from "@/lib/auth";
 import {
   getBestStreak,
-  getExercisePRs,
+  getExerciseProgress,
   getMuscleDistribution,
   getStreakHistory,
   getVolumeHistory,
 } from "@/lib/stats";
 import { listBodyWeightHistory } from "@/lib/body-metrics";
 import { BarChart, HorizontalBarList, LineChart, Sparkline } from "@/app/components/Charts";
-import { ExerciseThumb } from "@/app/components/ExerciseThumb";
+import { ExerciseProgressSection } from "@/app/components/ExerciseProgress";
 
 export const metadata: Metadata = {
   title: "Estadísticas — Sakatl",
@@ -17,12 +17,12 @@ export const metadata: Metadata = {
 
 export default async function EstadisticasPage() {
   const userId = await requireUser();
-  const [streakHistory, bestStreak, volumeHistory, prs, muscleDistribution, weightHistory] =
+  const [streakHistory, bestStreak, volumeHistory, exerciseProgress, muscleDistribution, weightHistory] =
     await Promise.all([
       getStreakHistory(userId, 14),
       getBestStreak(userId),
       getVolumeHistory(userId, 8),
-      getExercisePRs(userId),
+      getExerciseProgress(userId),
       getMuscleDistribution(userId),
       listBodyWeightHistory(userId, 12),
     ]);
@@ -101,37 +101,7 @@ export default async function EstadisticasPage() {
           </div>
         </div>
 
-        <div>
-          <h2 className="mb-4 text-xl font-extrabold">Récords personales</h2>
-          {prs.length === 0 ? (
-            <p className="rounded-2xl border border-[#2a2f37] bg-[#1c2026] px-6 py-8 text-center text-sm text-[#9099a3]">
-              Todavía no tienes récords registrados. Marca series con peso durante un entrenamiento
-              para empezar a verlos aquí.
-            </p>
-          ) : (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {prs.map((pr) => (
-                <div
-                  key={pr.exerciseId}
-                  className="flex items-center gap-3 rounded-xl border border-[#2a2f37] bg-[#1c2026] p-4"
-                >
-                  <ExerciseThumb
-                    exerciseId={pr.exerciseId}
-                    image={pr.image}
-                    name={pr.name}
-                    imgClassName="h-12 w-12 rounded-lg object-cover"
-                  />
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-[#f1f3f4]">{pr.name}</p>
-                    <p className="text-xs text-[#9099a3]">
-                      {pr.maxWeight} kg{pr.reps != null ? ` × ${pr.reps}` : ""}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <ExerciseProgressSection exercises={exerciseProgress} now={new Date().toISOString()} />
       </div>
     </div>
   );
