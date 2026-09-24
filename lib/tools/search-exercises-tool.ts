@@ -7,7 +7,7 @@ export const searchExercisesTool = tool({
     "Busca ejercicios reales del catálogo de Sakatl por nombre, músculo o equipo. Usar antes de proponer una rutina, para obtener exerciseId válidos.",
   inputSchema: z.object({
     q: z.string().optional().describe("Texto libre: nombre, músculo o equipo (ej. 'pecho', 'sentadilla')"),
-    equipment: z.string().optional().describe("Filtro de equipo exacto (ej. 'barbell', 'dumbbell', 'body weight')"),
+    equipment: z.string().optional().describe("Filtro de equipo exacto (ej. 'Barra', 'Mancuerna', 'Peso corporal')"),
   }),
   execute: async ({ q, equipment }) => {
     const { items } = await searchExercises({ q, equipment, limit: 8 });

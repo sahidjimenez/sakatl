@@ -49,7 +49,7 @@ export function ExerciseDetailModal({
             <div className="mb-4 flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-xl font-extrabold text-[#f1f3f4]">{detail.name}</h2>
-                <p className="mt-1 text-sm text-[#9099a3] capitalize">
+                <p className="mt-1 text-sm text-[#9099a3]">
                   {detail.target} · {detail.equipment} · {detail.category}
                 </p>
               </div>

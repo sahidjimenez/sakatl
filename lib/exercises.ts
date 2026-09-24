@@ -6,6 +6,7 @@ import { loadCustomExercises } from "./custom-exercises";
 export type ExerciseRecord = {
   id: string;
   name: string;
+  name_en?: string;
   category: string;
   body_part: string;
   equipment: string;
@@ -64,7 +65,8 @@ function toSummary(ex: ExerciseRecord): ExerciseSummary {
     name: ex.name,
     category: ex.category,
     equipment: ex.equipment,
-    target: ex.target,
+    // Custom exercises store the English muscle key as target.
+    target: muscleGroupLabel(ex.target),
     muscle_group: ex.muscle_group,
     image: ex.image,
   };
@@ -107,10 +109,10 @@ export async function searchExercises({
   const filtered = exercises.filter((ex) => {
     if (muscleGroup && muscleGroupLabel(ex.muscle_group) !== muscleGroup) return false;
     if (category && ex.category !== category) return false;
-    if (equipment && ex.equipment !== equipment) return false;
+    if (equipment && normalizeExerciseSearch(ex.equipment) !== normalizeExerciseSearch(equipment)) return false;
     if (!needle) return true;
     return normalizeExerciseSearch([
-      ex.name, ex.target, ex.muscle_group, muscleGroupLabel(ex.muscle_group),
+      ex.name, ex.name_en ?? "", ex.target, ex.muscle_group, muscleGroupLabel(ex.muscle_group),
       ex.category, ex.equipment, ...ex.secondary_muscles, ex.instructions.es,
     ].join(" ")).includes(needle);
   });

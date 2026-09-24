@@ -52,8 +52,23 @@ export const ASSISTING_MUSCLES = [
   { label: "Tibial anterior", value: "tibialis anterior", group: "Pantorrillas y tobillos" },
 ];
 
+// Catalog-only secondary muscles that are not selectable in the custom exercise form.
+const CATALOG_MUSCLE_LABELS: Record<string, string> = {
+  back: "Espalda",
+  "rear deltoids": "Deltoides posterior",
+  feet: "Pies",
+  groin: "Ingle",
+  "upper chest": "Pecho superior",
+  "grip muscles": "Músculos de agarre",
+  "lower abs": "Abdomen bajo",
+  "inner thighs": "Cara interna del muslo",
+  sternocleidomastoid: "Esternocleidomastoideo",
+  shins: "Espinillas",
+};
+
 export function assistingMuscleLabel(value: string) {
-  return ASSISTING_MUSCLES.find(muscle => muscle.value === value)?.label ?? muscleGroupLabel(value);
+  return ASSISTING_MUSCLES.find(muscle => muscle.value === value)?.label
+    ?? CATALOG_MUSCLE_LABELS[value] ?? muscleGroupLabel(value);
 }
 
 export function canAssist(label: string, primaryGroup: string) {

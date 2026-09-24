@@ -120,7 +120,7 @@ export function AddExerciseModal({
                         className="flex-1 text-left"
                       >
                         <span className="block text-sm font-semibold text-[#f1f3f4]">{ex.name}</span>
-                        <span className="block text-xs text-[#9099a3] capitalize">
+                        <span className="block text-xs text-[#9099a3]">
                           {ex.target} · {ex.equipment}
                         </span>
                       </button>

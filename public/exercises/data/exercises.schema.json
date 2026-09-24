@@ -58,7 +58,12 @@
         },
         "name": {
           "type": "string",
-          "description": "Full exercise name (e.g. \"3/4 sit-up\").",
+          "description": "Full exercise name in Spanish (e.g. \"Abdominal 3/4\").",
+          "minLength": 1
+        },
+        "name_en": {
+          "type": "string",
+          "description": "Original English name from the upstream dataset (e.g. \"3/4 sit-up\"), kept for search.",
           "minLength": 1
         },
         "category": {
@@ -70,21 +75,21 @@
           "type": "string",
           "description": "Body part targeted.",
           "enum": [
-            "back",
-            "cardio",
-            "chest",
-            "lower arms",
-            "lower legs",
-            "neck",
-            "shoulders",
-            "upper arms",
-            "upper legs",
-            "waist"
+            "Antebrazos",
+            "Brazos",
+            "Cardio",
+            "Cintura",
+            "Cuello",
+            "Espalda",
+            "Hombros",
+            "Muslos",
+            "Pantorrillas",
+            "Pecho"
           ]
         },
         "equipment": {
           "type": "string",
-          "description": "Required equipment (e.g. \"dumbbell\", \"body weight\").",
+          "description": "Required equipment (e.g. \"Mancuerna\", \"Peso corporal\").",
           "minLength": 1
         },
         "instructions": {
@@ -107,7 +112,7 @@
         },
         "target": {
           "type": "string",
-          "description": "Primary target muscle (e.g. \"biceps\", \"abs\").",
+          "description": "Primary target muscle (e.g. \"Bíceps\", \"Abdominales\").",
           "minLength": 1
         },
         "media_id": {
@@ -139,6 +144,7 @@
       "required": [
         "id",
         "name",
+        "name_en",
         "category",
         "body_part",
         "equipment",

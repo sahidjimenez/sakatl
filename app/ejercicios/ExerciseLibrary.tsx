@@ -143,7 +143,7 @@ export default function ExerciseLibrary({
                 </div>
                 <div className="flex flex-1 flex-col gap-1 p-3">
                   <span className="text-sm font-semibold leading-snug">{ex.name}</span>
-                  <span className="text-xs text-[#9099a3] capitalize">
+                  <span className="text-xs text-[#9099a3]">
                     {ex.target} · {ex.equipment}
                   </span>
                 </div>
