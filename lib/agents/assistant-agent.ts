@@ -1,4 +1,4 @@
-import { ToolLoopAgent, InferAgentUIMessage, stepCountIs, hasToolCall } from "ai";
+import { ToolLoopAgent, InferAgentUIMessage, stepCountIs } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { searchExercisesTool } from "@/lib/tools/search-exercises-tool";
 import { proposeRoutineTool } from "@/lib/tools/propose-routine-tool";
@@ -7,8 +7,30 @@ import { presentOptionsTool } from "@/lib/tools/present-options-tool";
 export const assistantAgent = new ToolLoopAgent({
   model: anthropic("claude-sonnet-5"),
   maxOutputTokens: 6000,
-  stopWhen: [stepCountIs(8), hasToolCall("presentOptions", "proposeRoutine")],
+  stopWhen: [stepCountIs(6), ({ steps }) => steps.at(-1)?.toolResults.some(result =>
+    result.toolName === "presentOptions" || result.toolName === "proposeRoutine") ?? false],
+  timeout: { toolMs: 15_000 },
   providerOptions: { anthropic: { disableParallelToolUse: true } },
+  prepareStep: ({ steps, stepNumber }) => {
+    const searches = steps.flatMap(step => step.toolResults)
+      .filter(result => !result.dynamic && result.toolName === "searchExercises");
+    if (searches.length === 0) return;
+
+    // Once research starts, finish the proposal in this same response instead
+    // of allowing a text-only acknowledgement to end the tool loop.
+    const hasExercises = searches.some(result => result.output.items.length > 0);
+    // Reserve the remaining steps for the proposal and validation repairs,
+    // instead of spending the entire request on more catalogue searches.
+    if (searches.length >= 3 || stepNumber >= 4) {
+      return hasExercises
+        ? { toolChoice: { type: "tool" as const, toolName: "proposeRoutine" as const } }
+        : { toolChoice: "none" as const };
+    }
+    return {
+      activeTools: ["searchExercises", "proposeRoutine"],
+      toolChoice: "required" as const,
+    };
+  },
   instructions: `Eres el asistente de entrenamiento de Sakatl. Recomiendas ejercicios y armas
 rutinas completas (ejercicios sueltos, bi-series o tri-series) según lo que pida el usuario
 (objetivo, músculos, equipo disponible, días por semana).
@@ -31,6 +53,11 @@ Reglas:
   propio renglón (usa saltos de línea), no los separes solo con comas.
 - Cuando tengas suficiente información, llama a proposeRoutine con la rutina completa. El usuario
   la revisa y decide si crearla — tú no la creas.
+- Después de recibir objetivo, equipo y días, busca ejercicios y entrega proposeRoutine en ese
+  mismo turno. No esperes otro mensaje ni termines anunciando que vas a preparar la rutina.
+  Evita búsquedas redundantes. Si el catálogo no ofrece ejercicios adecuados, explica la limitación.
+- Tienes hasta tres búsquedas por turno; usa términos amplios y aprovecha los resultados para
+  entregar una rutina completa, sin seguir buscando variaciones del mismo ejercicio.
 - La tarjeta de proposeRoutine ya muestra ejercicios, series y repeticiones. No repitas esa lista
   en texto ni antes ni después de la herramienta. Usa solo una introducción breve si hace falta.
 - Responde siempre en español mexicano, de forma breve y directa.`,

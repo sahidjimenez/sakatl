@@ -4,10 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
+import { assistantFetch } from "@/lib/assistant-fetch";
+import { visibleAssistantParts } from "@/lib/assistant-visible-parts";
 import { prepareAssistantMessages } from "@/lib/assistant-history";
 import type { AssistantUIMessage } from "@/lib/agents/assistant-agent";
 import { saveGuestRoutine } from "@/lib/guest/storage";
 import { ExerciseThumb } from "@/app/components/ExerciseThumb";
+import { AssistantLoading } from "@/app/components/AssistantLoading";
 import { VoiceRecordButton } from "@/app/components/VoiceRecordButton";
 
 const CHAT_HISTORY_KEY = "sakatl:guest:assistant-chat-history";
@@ -173,10 +176,10 @@ function OptionsButtons({
 
 export function GuestAsistenteChat() {
   const [input, setInput] = useState("");
-  const [initialMessages] = useState(loadStoredMessages);
+  const historyLoaded = useRef(false);
   const { messages, sendMessage, status, setMessages, error, clearError } = useChat<AssistantUIMessage>({
-    messages: initialMessages,
     transport: new DefaultChatTransport({
+      fetch: assistantFetch,
       api: "/api/assistant-invitado",
       prepareSendMessagesRequest: ({ messages }) => ({
         body: { messages: prepareAssistantMessages(messages) },
@@ -187,6 +190,11 @@ export function GuestAsistenteChat() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
+    if (!historyLoaded.current) {
+      historyLoaded.current = true;
+      setMessages(loadStoredMessages());
+      return;
+    }
     const trimmed = trimHistory(messages);
     if (trimmed.length !== messages.length) {
       setMessages(trimmed);
@@ -229,7 +237,10 @@ export function GuestAsistenteChat() {
             mancuernas&quot;) y te propongo una rutina. Por ahora puedes usar la IA sin cupos.
           </p>
         )}
-        {messages.map((message) => (
+        {messages.map((message) => {
+          const parts = visibleAssistantParts(message);
+          if (parts.length === 0) return null;
+          return (
           <div
             key={message.id}
             className={
@@ -237,21 +248,12 @@ export function GuestAsistenteChat() {
               " flex flex-col gap-2"
             }
           >
-            {message.parts.map((part, i) => {
+            {parts.map((part, i) => {
               if (part.type === "text") {
-                if (message.role === "assistant" && message.parts.some(p =>
-                  p.type === "tool-proposeRoutine" && p.state === "output-available")) return null;
                 return <ChatText key={i} text={part.text} isUser={message.role === "user"} />;
               }
               if ("state" in part && part.state === "output-error") {
                 return <p key={i} role="alert" className="text-sm text-red-400">No se pudo completar este paso. Intenta de nuevo.</p>;
-              }
-              if (part.type === "tool-searchExercises" && part.state !== "output-available") {
-                return (
-                  <p key={i} className="px-1 text-xs text-[#9099a3]">
-                    🔎 Buscando ejercicios…
-                  </p>
-                );
               }
               if (part.type === "tool-proposeRoutine" && part.state === "output-available") {
                 return (
@@ -275,13 +277,12 @@ export function GuestAsistenteChat() {
               return null;
             })}
           </div>
-        ))}
-        {(status === "submitted" || status === "streaming") && (
-          <p className="mr-auto text-xs text-[#9099a3]">El asistente está escribiendo…</p>
-        )}
+          );
+        })}
+        {busy && <AssistantLoading />}
         {error && (
           <p className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-400">
-            {error.message || "Algo salió mal. Intenta de nuevo en un momento."}
+            {error.name === "TimeoutError" ? "La respuesta tardó demasiado. Intenta de nuevo." : error.message || "Algo salió mal. Intenta de nuevo en un momento."}
           </p>
         )}
       </div>
