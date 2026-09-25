@@ -98,6 +98,7 @@ export function SetRow({
       if (weightVal != null) formData.set("weight", String(weightVal));
       if (repsVal != null && repsVal !== "") formData.set("reps", String(repsVal));
       await logSetAction(formData);
+      completion?.markSetDone(key);
     });
   }
 
@@ -114,7 +115,6 @@ export function SetRow({
             startRestTimer();
             setOptimisticValues({ weight: prevWeight, reps: prevReps });
             setOptimisticDone(true);
-            completion?.markSetDone(key);
             submitSet(prevWeight, prevReps);
           }}
           className="min-h-[44px] flex-1 rounded-[10px] border border-dashed border-[#2a2f37] bg-[#1c2026] text-sm font-bold text-[#9099a3] transition-colors duration-75 hover:border-[#4ade80] hover:text-[#4ade80]"
@@ -161,7 +161,6 @@ export function SetRow({
         completed={isDone}
         onMark={() => {
           setOptimisticDone(true);
-          completion?.markSetDone(key);
           submitSet();
         }}
         onUndo={handleUndo}

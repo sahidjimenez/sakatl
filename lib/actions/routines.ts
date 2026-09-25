@@ -3,10 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
+import { summarizeSets, type SessionSummary } from "@/lib/session-summary";
 import {
   ApiError,
   addExtraExerciseToSession,
   completeSession,
+  getSessionDetail,
+  getUserProfile,
+  getWeeklyProgress,
   createRoutine,
   deleteRoutine,
   deleteSession,
@@ -126,12 +130,25 @@ export async function completeSessionAction(sessionId: string) {
 
 export async function completeSessionForCelebrationAction(
   sessionId: string,
-): Promise<{ error: string } | { ok: true }> {
+): Promise<{ error: string } | { ok: true; summary: SessionSummary }> {
   const userId = await requireUser();
   try {
     await completeSession(sessionId, userId);
+    const [session, profile, progress] = await Promise.all([
+      getSessionDetail(sessionId, userId), getUserProfile(userId), getWeeklyProgress(userId),
+    ]);
     revalidatePath(`/app/sesiones/${sessionId}`);
-    return { ok: true };
+    revalidatePath("/app");
+    return { ok: true, summary: {
+      ...summarizeSets(session.setLogs),
+      name: profile?.displayName ?? "Atleta Sakatl",
+      routineName: session.routine?.name ?? "Entrenamiento",
+      completedAt: session.completedAt!.toISOString(),
+      activeSeconds: session.activeSeconds,
+      sessionsCount: progress.sessionsCount,
+      weeklyGoal: progress.weeklyGoal,
+      notes: session.notes ?? "",
+    } };
   } catch (err) {
     if (err instanceof ApiError) return { error: err.message };
     throw err;
