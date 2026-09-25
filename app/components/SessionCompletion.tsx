@@ -5,11 +5,13 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Player, type PlayerRef } from "@remotion/player";
 import { SessionCompleteComposition } from "@/app/components/SessionCompleteComposition";
+import { SessionSummaryScreen } from "@/app/components/SessionSummaryScreen";
+import type { SessionSummary } from "@/lib/session-summary";
 
 const FPS = 30;
 const DURATION_IN_FRAMES = 90;
 
-type CompletionResult = { error: string } | { ok: true };
+type CompletionResult = { error: string } | { ok: true; summary: SessionSummary };
 
 type Ctx = {
   markSetDone: (key: string) => void;
@@ -46,6 +48,8 @@ export function SessionCompletionProvider({
   const animationDoneRef = useRef(false);
   const resultRef = useRef<CompletionResult | null>(null);
   const playerRef = useRef<PlayerRef>(null);
+  const completingRef = useRef(false);
+  const [summary, setSummary] = useState<SessionSummary | null>(null);
 
   const [celebrating, setCelebrating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -69,18 +73,21 @@ export function SessionCompletionProvider({
     const result = resultRef.current;
     if (!result) return;
     if ("error" in result) {
+      completingRef.current = false;
       setCelebrating(false);
       setError(result.error);
       return;
     }
     startTransition(() => {
+      setSummary(result.summary);
       router.refresh();
       setCelebrating(false);
     });
   }
 
   function requestComplete() {
-    if (celebrating) return;
+    if (completingRef.current) return;
+    completingRef.current = true;
     setError(null);
     animationDoneRef.current = false;
     resultRef.current = null;
@@ -88,6 +95,9 @@ export function SessionCompletionProvider({
     setCelebrating(true);
     action(sessionId).then((result) => {
       resultRef.current = result;
+      settle();
+    }).catch(() => {
+      resultRef.current = { error: "No se pudo cargar el resumen. Intenta de nuevo." };
       settle();
     });
   }
@@ -109,6 +119,13 @@ export function SessionCompletionProvider({
       value={{ markSetDone, markSetUndone, requestComplete, error }}
     >
       {children}
+      {summary && createPortal(
+        <SessionSummaryScreen sessionId={sessionId} summary={summary} onFinish={() => {
+          setSummary(null);
+          router.push("/app");
+        }} />,
+        document.body,
+      )}
       {celebrating &&
         createPortal(
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0d0f12]">
