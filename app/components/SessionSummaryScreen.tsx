@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { updateSessionNotesAction } from "@/lib/actions/routines";
 import { summaryDuration, type SessionSummary } from "@/lib/session-summary";
-import { createSessionShareImage } from "@/lib/session-share";
+import { SessionShareModal, ShareIcon } from "@/app/components/SessionShareModal";
 
 export function SessionSummaryScreen({ sessionId, summary, onFinish }: {
   sessionId: string;
@@ -17,57 +17,19 @@ export function SessionSummaryScreen({ sessionId, summary, onFinish }: {
   const [notes, setNotes] = useState(summary.notes);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
-  const [shareFile, setShareFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState("");
-  const [imageError, setImageError] = useState(false);
-  const [sharing, setSharing] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => {
     heading.current?.focus();
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    let cancelled = false;
-    let url = "";
-    createSessionShareImage(summary).then((blob) => {
-      if (cancelled) return;
-      url = URL.createObjectURL(blob);
-      setPreview(url);
-      setShareFile(new File([blob], "sakatl-entrenamiento.png", { type: "image/png" }));
-    }).catch(() => { if (!cancelled) setImageError(true); });
-    return () => {
-      cancelled = true;
-      URL.revokeObjectURL(url);
-      document.body.style.overflow = previous;
-    };
-  }, [summary]);
-
-  async function share() {
-    if (!shareFile || sharing) return;
-    setSharing(true);
-    try {
-      if (navigator.canShare?.({ files: [shareFile] })) {
-        await navigator.share({ files: [shareFile], title: "Mi entrenamiento en Sakatl" });
-      } else {
-        download();
-      }
-    } catch (error) {
-      if (!(error instanceof DOMException && error.name === "AbortError")) {
-        setMessage("No se pudo compartir. Puedes descargar la imagen y subirla a Instagram.");
-      }
-    } finally { setSharing(false); }
-  }
-
-  function download() {
-    const link = document.createElement("a");
-    link.href = preview;
-    link.download = "sakatl-entrenamiento.png";
-    link.click();
-  }
+    return () => { document.body.style.overflow = previous; };
+  }, []);
 
   const button = "min-h-12 rounded-xl px-5 py-3 text-sm font-bold disabled:opacity-50";
   return (
     <div ref={dialog} role="dialog" aria-modal="true" aria-labelledby="session-summary-title" onKeyDown={(event) => {
-      if (event.key !== "Tab") return;
+      if (shareOpen || event.key !== "Tab") return;
       const controls = dialog.current?.querySelectorAll<HTMLElement>('button:not(:disabled), textarea, a[href]');
       if (!controls?.length) return;
       const first = controls[0];
@@ -117,17 +79,14 @@ export function SessionSummaryScreen({ sessionId, summary, onFinish }: {
         </form>}
         <section className="mt-9 border-t border-[#2a2f37] pt-6">
           <h2 className="text-lg font-bold">Comparte tu progreso</h2>
-          <p className="mt-1 text-sm text-[#9099a3]">Tu tarjeta para historias de Instagram.</p>
-          {preview && <Image unoptimized src={preview} alt="Tarjeta con tu nombre, estadísticas de entrenamiento y logo de Sakatl" width={1080} height={1920} className="mx-auto my-5 w-52 rounded-2xl border border-[#2a2f37]" />}
-          {imageError && <p role="alert" className="my-3 text-sm">No se pudo crear la tarjeta en este navegador. Tu entrenamiento está guardado.</p>}
-          <div className="mt-4 flex flex-wrap gap-3">
-            <button disabled={!shareFile || sharing} onClick={share} className={`${button} bg-[#f1f3f4] text-[#0d0f12]`}>{sharing ? "Compartiendo…" : "Compartir imagen"}</button>
-            <button disabled={!shareFile} onClick={download} className={`${button} border border-[#2a2f37]`}>Descargar</button>
-          </div>
-          <p className="mt-3 text-xs text-[#9099a3]">Elige Instagram si aparece entre tus aplicaciones, o descarga la imagen para subirla.</p>
+          <p className="mt-1 text-sm text-[#9099a3]">Tu tarjeta para compartir</p>
+          <button onClick={() => setShareOpen(true)} aria-haspopup="dialog" className={`${button} mt-4 inline-flex items-center justify-center gap-2 bg-[#f1f3f4] text-[#0d0f12]`}>
+            <ShareIcon /> Compartir
+          </button>
         </section>
         <p role="status" className="mt-4 text-sm text-[#4ade80]">{message}</p>
       </div>
+      {shareOpen && <SessionShareModal summary={summary} onClose={() => setShareOpen(false)} />}
     </div>
   );
 }
