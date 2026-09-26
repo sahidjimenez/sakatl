@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import HomeNav from "./HomeNav";
+import { InstallAppButton } from "./components/home/InstallAppButton";
 import { CreateRoutineCTA } from "./CreateRoutineCTA";
 import { StatsRow } from "./components/home/StatsRow";
 import { DynamicAppMockup, DynamicAssistantChat } from "./components/home/DynamicHomeSections";
@@ -50,6 +51,7 @@ export default async function Home() {
                 <button type="button" className="btn btn-ghost">Ver rutinas de la comunidad</button>
               </Link>
             </div>
+            <InstallAppButton />
             <div className="avatars-row">
               <div className="avatars">
                 <span className="avatar">SJ</span>

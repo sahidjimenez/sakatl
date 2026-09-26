@@ -94,6 +94,28 @@
 .home-page .btn-enter { background: var(--text); color: var(--bg); border-radius: 999px; }
 .home-page .btn-enter:hover { background: #fff; }
 
+.home-page .install-app { margin-top: 16px; }
+.home-page .install-app-button { gap: 8px; color: var(--accent); }
+.home-page .install-app-button:disabled { opacity: 0.65; cursor: wait; }
+.home-page .install-app .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.home-page .install-app-guide {
+  margin-top: 12px;
+  padding: 20px;
+  max-width: 480px;
+  border: 1px solid var(--border-2);
+  border-radius: 16px;
+  background: var(--surface-a);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.home-page .install-app-guide h3 { margin: 0 0 8px; font-size: 16px; color: var(--text); }
+.home-page .install-app-guide p { margin: 0 0 12px; }
+.home-page .install-app-guide ol { margin: 0 0 16px; padding-left: 20px; }
+.home-page .install-app-guide li + li { margin-top: 8px; }
+.home-page .install-app-guide strong { color: var(--text); }
+.home-page .install-app-address { overflow-wrap: anywhere; color: var(--accent); user-select: all; }
+
 .home-page .nav-toggle {
   display: none;
   flex-direction: column;
