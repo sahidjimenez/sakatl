@@ -115,6 +115,33 @@
 .home-page .install-app-guide li + li { margin-top: 8px; }
 .home-page .install-app-guide strong { color: var(--text); }
 .home-page .install-app-address { overflow-wrap: anywhere; color: var(--accent); user-select: all; }
+.home-page .install-ios-modal {
+  margin: auto;
+  padding: 0;
+  width: calc(100% - 24px);
+  max-width: 560px;
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--border-2);
+  border-radius: 24px;
+  background: var(--surface-a);
+  color: var(--text);
+  text-align: left;
+  box-shadow: 0 24px 80px #0008;
+}
+.home-page .install-ios-modal::backdrop { background: #000b; backdrop-filter: blur(6px); }
+.home-page .install-ios-content { padding: 20px; }
+.home-page .install-ios-header { display: flex; align-items: center; gap: 12px; justify-content: space-between; }
+.home-page .install-ios-header h2 { margin: 0; font-size: 22px; line-height: 1.25; }
+.home-page .install-ios-modal .btn { min-width: 44px; min-height: 44px; flex-shrink: 0; }
+.home-page .install-ios-modal p { margin: 12px 0; font-size: 14px; line-height: 1.6; color: var(--muted); }
+.home-page .install-ios-notice { padding: 12px; border-radius: 12px; background: var(--accent-soft); font-size: 14px; }
+.home-page .install-ios-notice .install-app-address { margin-bottom: 0; color: var(--accent); }
+.home-page .install-ios-steps { list-style: none; padding: 0; margin: 24px 0; display: grid; gap: 24px; }
+.home-page .install-ios-steps h3 { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 16px; }
+.home-page .install-ios-steps h3 span { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-size: 14px; }
+.home-page .install-ios-image { display: block; width: auto; max-width: 100%; height: auto; max-height: 360px; margin: 0 auto; border-radius: 12px; object-fit: contain; }
 
 .home-page .nav-toggle {
   display: none;

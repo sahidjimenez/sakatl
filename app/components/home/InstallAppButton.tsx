@@ -1,6 +1,14 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import Image from "next/image";
+
+const iosSteps = [
+  { title: "Toca Compartir", description: "En Safari, abre el menú y toca Compartir.", image: "compartir", width: 714, height: 1155 },
+  { title: "Toca Ver más", description: "Si no aparecen todas las opciones, toca Ver más.", image: "ver-mas", width: 319, height: 394 },
+  { title: "Elige Agregar a Inicio", description: "Busca y toca Agregar a Inicio en la lista de opciones.", image: "agregar-inicio", width: 1290, height: 180 },
+  { title: "Confirma con Agregar", description: "Deja activado Abrir como app web y toca Agregar. Encontrarás Sakatl en tu pantalla de inicio.", image: "agregar", width: 1290, height: 1048 },
+];
 
 type InstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -16,6 +24,21 @@ export function InstallAppButton() {
   const [guide, setGuide] = useState<Guide | null>(null);
   const [address, setAddress] = useState("");
   const guideId = useId();
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const iosGuide = guide === "ios" || guide === "safari";
+
+  useEffect(() => {
+    if (!iosGuide || installed) return;
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const previousOverflow = document.body.style.overflow;
+    dialog.showModal();
+    document.body.style.overflow = "hidden";
+    return () => {
+      dialog.close();
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [iosGuide, installed]);
 
   useEffect(() => {
     const displayMode = window.matchMedia("(display-mode: standalone)");
@@ -93,20 +116,35 @@ export function InstallAppButton() {
         </svg>
         {busy ? "Abriendo instalación…" : "Descargar app"}
       </button>
-      <div id={guideId} className="install-app-guide" hidden={!guide} aria-live="polite">
-        {guide === "safari" && <>
-          <h3>Abre Sakatl en Safari</h3>
-          <p>Para descargar la app en tu iPhone o iPad, abre esta dirección en Safari y toca de nuevo «Descargar app».</p>
-          <p className="install-app-address">{address}</p>
-        </>}
-        {guide === "ios" && <>
-          <h3>Agrega Sakatl a tu pantalla de inicio</h3>
-          <ol>
-            <li>En Safari, abre el menú y toca <strong>Compartir</strong>.</li>
-            <li>Elige <strong>Agregar a pantalla de inicio</strong> (o «Añadir a pantalla de inicio»).</li>
-            <li>Si aparece, activa <strong>Abrir como app</strong> y toca <strong>Agregar</strong>.</li>
+      {iosGuide && <dialog
+        ref={dialogRef}
+        id={guideId}
+        className="install-ios-modal"
+        aria-labelledby={`${guideId}-title`}
+        onCancel={(event) => { event.preventDefault(); setGuide(null); }}
+        onClick={(event) => { if (event.target === event.currentTarget) setGuide(null); }}
+      >
+        <div className="install-ios-content">
+          <header className="install-ios-header">
+            <h2 id={`${guideId}-title`}>Agrega Sakatl a Inicio</h2>
+            <button type="button" className="btn btn-ghost" aria-label="Cerrar instrucciones" onClick={() => setGuide(null)}>✕</button>
+          </header>
+          <p>Sigue estos cuatro pasos en Safari para tener Sakatl en tu iPhone o iPad.</p>
+          {guide === "safari" && <div className="install-ios-notice">
+            <strong>Primero abre esta dirección en Safari:</strong>
+            <p className="install-app-address">{address}</p>
+          </div>}
+          <ol className="install-ios-steps">
+            {iosSteps.map((step, index) => <li key={step.image}>
+              <h3><span>{index + 1}</span>{step.title}</h3>
+              <p>{step.description}</p>
+              <Image src={`/install/ios/${step.image}.jpeg`} alt={`Paso ${index + 1}: ${step.title}`} width={step.width} height={step.height} sizes="(max-width: 600px) 85vw, 480px" className="install-ios-image" />
+            </li>)}
           </ol>
-        </>}
+          <button type="button" className="btn btn-ghost" onClick={() => setGuide(null)}>Entendido</button>
+        </div>
+      </dialog>}
+      <div id={iosGuide ? undefined : guideId} className="install-app-guide" hidden={!guide || iosGuide} aria-live="polite">
         {guide === "android" && <>
           <h3>Instala Sakatl en tu Android</h3>
           <p>Abre el menú del navegador (⋮) y elige <strong>Instalar app</strong> o <strong>Agregar a pantalla de inicio</strong>.</p>
