@@ -2,7 +2,27 @@
 // nunca toca la base de datos. Se limpia sola pasado GUEST_TTL_DAYS desde el
 // primer uso (ver pruneIfExpired).
 
+import { groupExerciseHistory, type ExerciseHistoryRow } from "../exercise-history";
+
 export type GuestBlockType = "single" | "bi_series" | "tri_series";
+
+export function getGuestExerciseHistory(current: GuestSession) {
+  const routines = new Map(readRoutines().map(routine => [routine.id, routine]));
+  const rows: ExerciseHistoryRow[] = [];
+  for (const session of readSessions()) {
+    if (session.id === current.id || session.startedAt >= current.startedAt) continue;
+    const routine = routines.get(session.routineId);
+    const exercises = new Map([...(routine?.blocks ?? []), ...(session.extraBlocks ?? [])]
+      .flatMap(block => block.exercises.map(exercise => [exercise.id, exercise.exerciseId] as const)));
+    for (const set of session.setLogs) {
+      const exerciseId = exercises.get(set.blockExerciseId);
+      if (!set.completed || !exerciseId) continue;
+      rows.push({ ...set, id: `${set.blockExerciseId}-${set.setNumber}`, exerciseId,
+        sessionId: session.id, date: session.startedAt, routineName: routine?.name ?? "Rutina anterior" });
+    }
+  }
+  return groupExerciseHistory(rows);
+}
 
 export type GuestBlockExercise = {
   id: string;

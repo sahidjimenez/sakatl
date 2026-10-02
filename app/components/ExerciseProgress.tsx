@@ -8,7 +8,7 @@ const number = (value: number) => value.toLocaleString("es-MX", { maximumFractio
 const dateLabel = (date: string) => new Date(date).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 const panel = "rounded-2xl border border-[#2a2f37] bg-[#1c2026] p-5 sm:p-6";
 
-function ProgressChart({ points, unit, title, average }: {
+export function ProgressChart({ points, unit, title, average }: {
   points: { id: string; date: string; value: number }[];
   unit: string;
   title: string;

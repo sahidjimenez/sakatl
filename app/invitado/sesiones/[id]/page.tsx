@@ -10,6 +10,7 @@ import {
   deleteGuestSetLog,
   getGuestRoutine,
   getGuestSession,
+  getGuestExerciseHistory,
   reopenGuestSession,
   updateGuestSessionNotes,
   upsertGuestSetLog,
@@ -28,6 +29,7 @@ import { AddExerciseModal } from "@/app/components/AddExerciseModal";
 import { CancelSessionButton } from "@/app/components/CancelSessionButton";
 import { CollapsibleBlock } from "@/app/components/CollapsibleBlock";
 import { ExerciseThumb } from "@/app/components/ExerciseThumb";
+import { ExerciseHistoryButton } from "@/app/components/ExerciseHistoryButton";
 
 const BLOCK_LABELS: Record<string, string> = {
   single: "Ejercicio suelto",
@@ -67,6 +69,7 @@ export default function InvitadoSesionPage() {
   }
 
   const logsByKey = new Map(session.setLogs.map((log) => [`${log.blockExerciseId}-${log.setNumber}`, log]));
+  const exerciseHistory = getGuestExerciseHistory(session);
 
   function handleComplete() {
     completeGuestSession(session!.id);
@@ -236,7 +239,7 @@ export default function InvitadoSesionPage() {
                         </p>
                       </div>
                     )}
-                    <div className="mb-3 flex items-center justify-between gap-2">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                       <div className="min-w-0 flex-1">
                         {(ex.targetRepsMin || ex.targetRepsMax) && (
                           <span className="text-xs text-[#9099a3]">
@@ -245,6 +248,7 @@ export default function InvitadoSesionPage() {
                         )}
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
+                        <ExerciseHistoryButton exerciseId={ex.exerciseId} name={ex.exerciseName ?? ex.exerciseId} sessions={exerciseHistory[ex.exerciseId] ?? []} />
                         <ExerciseWeightUnitSelector exerciseId={ex.exerciseId} />
                       </div>
                     </div>

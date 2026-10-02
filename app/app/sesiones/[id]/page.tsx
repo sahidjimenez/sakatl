@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { getSessionDetail } from "@/lib/routines";
 import { getExerciseNotes } from "@/lib/exercise-notes";
+import { getExerciseHistory } from "@/lib/exercise-history-server";
+import { ExerciseHistoryButton } from "@/app/components/ExerciseHistoryButton";
 import { PersonalExerciseNote } from "@/app/components/PersonalExerciseNote";
 import {
   addExtraExerciseAction,
@@ -38,7 +40,11 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
   const userId = await requireUser();
   const session = await getSessionDetail(id, userId);
   if (!session.routine) notFound();
-  const personalNotes = await getExerciseNotes(userId, session.routine.blocks.flatMap(block => block.exercises.map(ex => ex.exerciseId)));
+  const exerciseIds = session.routine.blocks.flatMap(block => block.exercises.map(ex => ex.exerciseId));
+  const [personalNotes, exerciseHistory] = await Promise.all([
+    getExerciseNotes(userId, exerciseIds),
+    getExerciseHistory(userId, exerciseIds, session.id, session.startedAt),
+  ]);
 
   const logsByKey = new Map(
     session.setLogs.map((log) => [`${log.blockExerciseId}-${log.setNumber}`, log]),
@@ -180,7 +186,7 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
                         </p>
                       </div>
                     )}
-                    <div className="mb-3 flex items-center justify-between gap-2">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                       <div className="min-w-0 flex-1">
                         {(ex.targetRepsMin || ex.targetRepsMax) && (
                           <span className="text-xs text-[#9099a3]">
@@ -189,6 +195,7 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
                         )}
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
+                        <ExerciseHistoryButton exerciseId={ex.exerciseId} name={ex.exercise?.name ?? ex.exerciseId} sessions={exerciseHistory[ex.exerciseId] ?? []} />
                         <ExerciseWeightUnitSelector exerciseId={ex.exerciseId} />
                         <PersonalExerciseNote exerciseId={ex.exerciseId} name={ex.exercise?.name ?? ex.exerciseId} note={personalNotes[ex.exerciseId] ?? ""} />
                       </div>
